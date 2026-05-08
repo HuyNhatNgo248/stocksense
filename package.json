@@ -8,6 +8,7 @@
     "generate": "shopify app generate",
     "deploy": "shopify app deploy",
     "config:use": "shopify app config use",
+    "shopify:deploy": "node --experimental-strip-types shopify-app/deploy.ts",
     "env": "shopify app env",
     "start": "react-router-serve ./build/server/index.js",
     "docker-start": "npm run setup && npm run start",
