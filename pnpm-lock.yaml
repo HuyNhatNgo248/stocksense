@@ -32,9 +32,6 @@ importers:
       '@shopify/shopify-app-session-storage-prisma':
         specifier: ^8.0.0
         version: 8.0.1(@prisma/client@6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3))(@shopify/shopify-api@13.0.0)(@shopify/shopify-app-session-storage@5.0.0(@shopify/shopify-api@13.0.0))(prisma@6.19.3(typescript@5.9.3))
-      dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
       isbot:
         specifier: ^5.1.31
         version: 5.1.40
@@ -1881,10 +1878,6 @@ packages:
 
   dotenv@16.6.1:
     resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
-    engines: {node: '>=12'}
-
-  dotenv@17.4.2:
-    resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
     engines: {node: '>=12'}
 
   dset@3.1.4:
@@ -5693,8 +5686,6 @@ snapshots:
       tslib: 2.8.1
 
   dotenv@16.6.1: {}
-
-  dotenv@17.4.2: {}
 
   dset@3.1.4: {}
 
