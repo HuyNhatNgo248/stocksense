@@ -3,7 +3,7 @@
 
 client_id = "2255be0647acefa2ff4bb6b1c48d1233"
 name = "huy-dev"
-application_url = "https://api.huyngo248-dev.org"
+application_url = "https://huyngo248-dev.org"
 embedded = true
 
 [webhooks]
@@ -11,25 +11,21 @@ api_version = "2026-01"
 
   [[webhooks.subscriptions]]
   topics = ["orders/paid"]
-  uri = "/webhooks/shopify/order"
+  uri = "/api/webhooks/orders/paid"
 
   [[webhooks.subscriptions]]
   topics = ["inventory_levels/update"]
-  uri = "/webhooks/shopify/inventory"
-
-  [[webhooks.subscriptions]]
-  topics = ["products/update"]
-  uri = "/webhooks/shopify/product"
+  uri = "/api/webhooks/inventory_levels/update"
 
   [[webhooks.subscriptions]]
   topics = ["app/uninstalled"]
-  uri = "/webhooks/shopify/app-uninstalled"
+  uri = "/api/webhooks/app/uninstalled"
 
 [access_scopes]
 scopes = "read_orders,read_all_orders,read_products,read_inventory,read_locations,write_inventory"
 
 [auth]
-redirect_urls = ["https://api.huyngo248-dev.org/api/auth/callback"]
+redirect_urls = ["https://huyngo248-dev.org"]
 
 [build]
-automatically_update_urls_on_dev = true
+automatically_update_urls_on_dev = false

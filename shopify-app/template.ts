@@ -22,28 +22,24 @@ api_version = "${env.SHOPIFY_API_VERSION}"
 
   [[webhooks.subscriptions]]
   topics = ["orders/paid"]
-  uri = "/webhooks/shopify/order"
+  uri = "/api/webhooks/orders/paid"
 
   [[webhooks.subscriptions]]
   topics = ["inventory_levels/update"]
-  uri = "/webhooks/shopify/inventory"
-
-  [[webhooks.subscriptions]]
-  topics = ["products/update"]
-  uri = "/webhooks/shopify/product"
+  uri = "/api/webhooks/inventory_levels/update"
 
   [[webhooks.subscriptions]]
   topics = ["app/uninstalled"]
-  uri = "/webhooks/shopify/app-uninstalled"
+  uri = "/api/webhooks/app/uninstalled"
 
 [access_scopes]
 scopes = "read_orders,read_all_orders,read_products,read_inventory,read_locations,write_inventory"
 
 [auth]
-redirect_urls = ["${env.APP_URL}/api/auth/callback"]
+redirect_urls = ["${env.APP_URL}"]
 
 [build]
 include_config_on_deploy = true
-automatically_update_urls_on_dev = true
+automatically_update_urls_on_dev = false
 `;
 }
