@@ -35,7 +35,7 @@ export function QuickStats({ metrics }: QuickStatsProps) {
       <s-grid
         gridTemplateColumns="1fr auto 1fr auto 1fr auto 1fr"
         gap="small"
-        minInlineSize="1000px"
+        minInlineSize="700px"
       >
         <StatCard
           title="Critical"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useFetcher } from "react-router";
 import type {
   Forecast,
@@ -10,6 +10,8 @@ import type {
 
 interface InventoryTableProps {
   inventory: ForecastListResponse;
+  selectedId?: string;
+  onRowClick?: (forecast: Forecast) => void;
 }
 
 const STATUS_FILTERS = ["All", "Critical", "Reorder", "OK"] as const;
@@ -21,6 +23,49 @@ const STATUS_TONE: Record<ForecastStatus, "critical" | "caution" | "success"> =
     REORDER: "caution",
     OK: "success",
   };
+
+function ClickableTableRow({
+  forecast,
+  onRowClick,
+}: {
+  forecast: Forecast;
+  onRowClick?: (f: Forecast) => void;
+}) {
+  const ref = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const handler = (e: Event) => {
+      if ((e.target as HTMLElement).closest("s-button, button, a, s-link"))
+        return;
+      onRowClick?.(forecast);
+    };
+    el.addEventListener("click", handler);
+    return () => el.removeEventListener("click", handler);
+  }, [forecast, onRowClick]);
+
+  return (
+    <s-table-row
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ref={ref as any}
+    >
+      <s-table-cell>
+        <s-text>{forecast.product.title}</s-text>
+      </s-table-cell>
+      <s-table-cell>
+        <s-text color="subdued">{forecast.product.sku}</s-text>
+      </s-table-cell>
+      <s-table-cell>
+        <s-badge tone={STATUS_TONE[forecast.status]}>{forecast.status}</s-badge>
+      </s-table-cell>
+      <s-table-cell>{forecast.product.currentStock}</s-table-cell>
+      <s-table-cell>{Math.round(forecast.reorderPoint)}</s-table-cell>
+      <s-table-cell>{Math.round(forecast.safetyStock)}</s-table-cell>
+      <s-table-cell>{forecast.velocityPerDay.toFixed(2)}</s-table-cell>
+    </s-table-row>
+  );
+}
 
 export function InventoryTableSkeleton() {
   return (
@@ -48,7 +93,7 @@ export function InventoryTableSkeleton() {
   );
 }
 
-export function InventoryTable({ inventory }: InventoryTableProps) {
+export function InventoryTable({ inventory, onRowClick }: InventoryTableProps) {
   const fetcher = useFetcher<ForecastListResponse>();
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("All");
   const [search, setSearch] = useState("");
@@ -60,7 +105,10 @@ export function InventoryTable({ inventory }: InventoryTableProps) {
   const from = total === 0 ? 0 : (currentPage - 1) * limit + 1;
   const to = Math.min(currentPage * limit, total);
   function load(newPage: number, filter: StatusFilter, q: string) {
-    const params = new URLSearchParams({ page: String(newPage), limit: String(limit) });
+    const params = new URLSearchParams({
+      page: String(newPage),
+      limit: String(limit),
+    });
     if (filter !== "All") params.set("status", filter.toUpperCase());
     if (q) params.set("search", q);
     fetcher.load(`/app/inventory?${params.toString()}`);
@@ -81,12 +129,13 @@ export function InventoryTable({ inventory }: InventoryTableProps) {
     const timer = setTimeout(() => {
       setPage(1);
       const params = new URLSearchParams({ page: "1", limit: String(limit) });
-      if (activeFilter !== "All") params.set("status", activeFilter.toUpperCase());
+      if (activeFilter !== "All")
+        params.set("status", activeFilter.toUpperCase());
       if (search) params.set("search", search);
       fetcher.load(`/app/inventory?${params.toString()}`);
     }, 400);
     return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   return (
@@ -121,7 +170,9 @@ export function InventoryTable({ inventory }: InventoryTableProps) {
           </div>
         </div>
 
-        <div className={`overflow-x-auto transition-opacity duration-150 ${fetcher.state !== "idle" ? "opacity-50 pointer-events-none" : ""}`}>
+        <div
+          className={`overflow-x-auto transition-opacity duration-150 ${fetcher.state !== "idle" ? "opacity-50 pointer-events-none" : ""}`}
+        >
           <s-table>
             <s-table-header-row>
               <s-table-header listSlot="primary">Product</s-table-header>
@@ -135,27 +186,11 @@ export function InventoryTable({ inventory }: InventoryTableProps) {
 
             <s-table-body>
               {forecasts.map((forecast: Forecast) => (
-                <s-table-row key={forecast.id}>
-                  <s-table-cell>{forecast.product.title}</s-table-cell>
-                  <s-table-cell>
-                    <s-text color="subdued">{forecast.product.sku}</s-text>
-                  </s-table-cell>
-                  <s-table-cell>
-                    <s-badge tone={STATUS_TONE[forecast.status]}>
-                      {forecast.status}
-                    </s-badge>
-                  </s-table-cell>
-                  <s-table-cell>{forecast.product.currentStock}</s-table-cell>
-                  <s-table-cell>
-                    {Math.round(forecast.reorderPoint)}
-                  </s-table-cell>
-                  <s-table-cell>
-                    {Math.round(forecast.safetyStock)}
-                  </s-table-cell>
-                  <s-table-cell>
-                    {forecast.velocityPerDay.toFixed(2)}
-                  </s-table-cell>
-                </s-table-row>
+                <ClickableTableRow
+                  key={forecast.id}
+                  forecast={forecast}
+                  onRowClick={onRowClick}
+                />
               ))}
             </s-table-body>
           </s-table>
