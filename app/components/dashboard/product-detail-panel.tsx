@@ -1,57 +1,21 @@
-import type { Forecast } from "@/lib/api.server";
+import { useEffect } from "react";
+import { useFetcher } from "react-router";
+import {
+  AreaChart,
+  Area,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import type { Forecast, VelocityHistory } from "@/lib/api.server";
 
 interface ProductDetailPanelProps {
   forecast: Forecast;
   onClose: () => void;
 }
 
-const MOCK_TREND = [
-  0.6, 0.7, 0.65, 0.8, 0.75, 0.9, 0.85, 0.7, 0.8, 0.95, 0.85, 0.9, 0.75, 0.8,
-  0.85, 0.7, 0.65, 0.8, 0.9, 0.85, 0.8, 0.9, 0.95, 1.0, 0.9, 0.85, 0.9, 0.95,
-  1.0, 0.95,
-];
-
-function Sparkline({ data }: { data: number[] }) {
-  const w = 240;
-  const h = 56;
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const range = max - min || 1;
-
-  const pts = data
-    .map((v, i) => {
-      const x = (i / (data.length - 1)) * w;
-      const y = h - ((v - min) / range) * (h - 4) - 2;
-      return `${x},${y}`;
-    })
-    .join(" ");
-
-  const area = `0,${h} ${pts} ${w},${h}`;
-
-  return (
-    <svg
-      viewBox={`0 0 ${w} ${h}`}
-      className="w-full"
-      style={{ height: `${h}px` }}
-    >
-      <defs>
-        <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
-          <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <polygon points={area} fill="url(#sg)" />
-      <polyline
-        points={pts}
-        fill="none"
-        stroke="#6366f1"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+// ── Primitives ────────────────────────────────────────────────────────────────
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -70,6 +34,185 @@ function MetricRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+// ── Sections ──────────────────────────────────────────────────────────────────
+
+function PanelHeader({
+  title,
+  sku,
+  onClose,
+}: {
+  title: string;
+  sku: string;
+  onClose: () => void;
+}) {
+  return (
+    <div className="flex justify-between items-start gap-2">
+      <s-stack gap="small-400">
+        <s-heading>{title}</s-heading>
+        <s-text color="subdued">{sku}</s-text>
+      </s-stack>
+      <s-button
+        variant="tertiary"
+        icon="x-circle"
+        accessibilityLabel="Close panel"
+        onClick={onClose}
+      />
+    </div>
+  );
+}
+
+function StockMetrics({
+  currentStock,
+  safetyStock,
+  reorderPoint,
+  leadTime,
+  velocity,
+}: {
+  currentStock: number;
+  safetyStock: number;
+  reorderPoint: number;
+  leadTime: number;
+  velocity: string;
+}) {
+  return (
+    <s-stack gap="small-300">
+      <SectionLabel>Stock Metrics</SectionLabel>
+      <MetricRow label="Current stock" value={`${currentStock} units`} />
+      <MetricRow label="Safety stock" value={`${safetyStock} units`} />
+      <MetricRow label="Reorder point" value={`${reorderPoint} units`} />
+      <MetricRow label="Lead time" value={`${leadTime} days`} />
+      <MetricRow label="Avg velocity" value={`${velocity} units/day`} />
+    </s-stack>
+  );
+}
+
+function ForecastFormula({
+  velocity,
+  stddev,
+  leadTime,
+  safetyStock,
+  reorderPoint,
+}: {
+  velocity: string;
+  stddev: string;
+  leadTime: number;
+  safetyStock: number;
+  reorderPoint: number;
+}) {
+  return (
+    <s-stack gap="small-300">
+      <SectionLabel>Forecast Formula</SectionLabel>
+      <div
+        className="rounded-lg p-3 text-xs leading-relaxed font-mono"
+        style={{
+          background: "var(--s-color-bg-surface-secondary, #f6f6f7)",
+          color: "#4f46e5",
+        }}
+      >
+        <div>
+          μ = {velocity}, σ = {stddev}, L = {leadTime}
+        </div>
+        <div>
+          Safety = 1.645 × {stddev} × √{leadTime} = {safetyStock}
+        </div>
+        <div>
+          ROP = {velocity} × {leadTime} + {safetyStock} = {reorderPoint}
+        </div>
+      </div>
+    </s-stack>
+  );
+}
+
+function VelocityTrend({ data }: { data: VelocityHistory }) {
+  return (
+    <ResponsiveContainer width="100%" height={96}>
+      <AreaChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+        <defs>
+          <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6366f1" stopOpacity={0.25} />
+            <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <XAxis dataKey="date" hide />
+        <YAxis domain={["auto", "auto"]} hide />
+        <Tooltip
+          contentStyle={{
+            fontSize: 11,
+            padding: "4px 8px",
+            borderRadius: 4,
+            border: "1px solid #e5e7eb",
+          }}
+          formatter={(value) => [
+            value == null ? "—" : String(value),
+            "EWMA velocity",
+          ]}
+          labelFormatter={(l) => l}
+        />
+        <Area
+          type="monotone"
+          dataKey="ewmaVelocity"
+          stroke="#6366f1"
+          strokeWidth={1.5}
+          fill="url(#sparkGrad)"
+          dot={false}
+          activeDot={{ r: 3 }}
+        />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+}
+
+function TrendSection({ variantId }: { variantId: string }) {
+  const fetcher = useFetcher<VelocityHistory>();
+
+  useEffect(() => {
+    fetcher.submit(
+      { variantId },
+      {
+        method: "post",
+        action: "/app/velocity-history",
+        encType: "application/json",
+      },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [variantId]);
+
+  return (
+    <s-stack gap="small-300">
+      <SectionLabel>30-Day Trend</SectionLabel>
+      <div
+        className="rounded-lg p-2"
+        style={{ background: "var(--s-color-bg-surface-secondary, #f6f6f7)" }}
+      >
+        {fetcher.state !== "idle" || !fetcher.data ? (
+          <div className="h-24 w-full rounded animate-pulse bg-gray-200" />
+        ) : (
+          <VelocityTrend data={fetcher.data} />
+        )}
+      </div>
+    </s-stack>
+  );
+}
+
+function PanelActions() {
+  return (
+    <s-stack gap="small-300">
+      <SectionLabel>Actions</SectionLabel>
+      <s-button variant="primary" icon="receipt">
+        Create Purchase Order
+      </s-button>
+      <s-button variant="secondary" icon="info">
+        Explain Calculation
+      </s-button>
+      <s-button variant="secondary" icon="chart-stacked">
+        View Demand History
+      </s-button>
+    </s-stack>
+  );
+}
+
+// ── Panel ─────────────────────────────────────────────────────────────────────
+
 export function ProductDetailPanel({
   forecast,
   onClose,
@@ -79,94 +222,35 @@ export function ProductDetailPanel({
   const reorderPoint = Math.round(forecast.reorderPoint);
   const velocity = forecast.velocityPerDay.toFixed(2);
   const stddev = forecast.stddevDemand.toFixed(1);
-  const leadTime = product.leadTimeDays;
 
   return (
     <s-box background="base" borderRadius="base" padding="base">
       <s-stack gap="base">
-        {/* Header */}
-        <div className="flex justify-between items-start gap-2">
-          <s-stack gap="small-400">
-            <s-heading>{product.title}</s-heading>
-            <s-text color="subdued">{product.sku}</s-text>
-          </s-stack>
-          <s-button
-            variant="tertiary"
-            icon="x-circle"
-            accessibilityLabel="Close panel"
-            onClick={onClose}
-          />
-        </div>
-
+        <PanelHeader
+          title={product.title}
+          sku={product.sku}
+          onClose={onClose}
+        />
         <s-divider />
-
-        {/* Stock Metrics */}
-        <s-stack gap="small-300">
-          <SectionLabel>Stock Metrics</SectionLabel>
-          <MetricRow
-            label="Current stock"
-            value={`${product.currentStock} units`}
-          />
-          <MetricRow label="Safety stock" value={`${safetyStock} units`} />
-          <MetricRow label="Reorder point" value={`${reorderPoint} units`} />
-          <MetricRow label="Lead time" value={`${leadTime} days`} />
-          <MetricRow label="Avg velocity" value={`${velocity} units/day`} />
-        </s-stack>
-
+        <StockMetrics
+          currentStock={product.currentStock}
+          safetyStock={safetyStock}
+          reorderPoint={reorderPoint}
+          leadTime={product.leadTimeDays}
+          velocity={velocity}
+        />
         <s-divider />
-
-        {/* Forecast Formula */}
-        <s-stack gap="small-300">
-          <SectionLabel>Forecast Formula</SectionLabel>
-          <div
-            className="rounded-lg p-3 text-xs leading-relaxed font-mono"
-            style={{
-              background: "var(--s-color-bg-surface-secondary, #f6f6f7)",
-              color: "#4f46e5",
-            }}
-          >
-            <div>
-              μ = {velocity}, σ = {stddev}, L = {leadTime}
-            </div>
-            <div>
-              Safety = 1.645 × {stddev} × √{leadTime} = {safetyStock}
-            </div>
-            <div>
-              ROP = {velocity}×{leadTime} + {safetyStock} = {reorderPoint}
-            </div>
-          </div>
-        </s-stack>
-
+        <ForecastFormula
+          velocity={velocity}
+          stddev={stddev}
+          leadTime={product.leadTimeDays}
+          safetyStock={safetyStock}
+          reorderPoint={reorderPoint}
+        />
         <s-divider />
-
-        {/* 30-day trend */}
-        <s-stack gap="small-300">
-          <SectionLabel>30-Day Trend</SectionLabel>
-          <div
-            className="rounded-lg p-2"
-            style={{
-              background: "var(--s-color-bg-surface-secondary, #f6f6f7)",
-            }}
-          >
-            <Sparkline data={MOCK_TREND} />
-          </div>
-        </s-stack>
-
+        <TrendSection variantId={product.shopifyVariantId} />
         <s-divider />
-
-        {/* Actions */}
-        <s-stack gap="small-300">
-          <SectionLabel>Actions</SectionLabel>
-          <s-button variant="primary" icon="receipt">
-            Create Purchase Order
-          </s-button>
-          <s-button variant="secondary" icon="info">
-            Explain Calculation
-          </s-button>
-          <s-button variant="secondary" icon="chart-stacked">
-            View Demand History
-          </s-button>
-        </s-stack>
+        <PanelActions />
       </s-stack>
     </s-box>
   );

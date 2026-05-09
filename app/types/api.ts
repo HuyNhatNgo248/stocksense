@@ -45,3 +45,11 @@ export interface ForecastListResponse {
   limit: number;
   totalPages: number;
 }
+
+export interface VelocityHistoryEntry {
+  date: string;
+  unitsSold: number | null;
+  ewmaVelocity: number;
+}
+
+export type VelocityHistory = VelocityHistoryEntry[];

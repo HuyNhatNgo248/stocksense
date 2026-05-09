@@ -1,8 +1,16 @@
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, ShouldRevalidateFunction } from "react-router";
 import { authenticate } from "../shopify.server";
 import { createApiClient } from "@/lib/api.server";
 
 const LIMIT = 20;
+
+export const shouldRevalidate: ShouldRevalidateFunction = ({
+  formAction,
+  defaultShouldRevalidate,
+}) => {
+  if (formAction === "/app/velocity-history") return false;
+  return defaultShouldRevalidate;
+};
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);

@@ -1,4 +1,8 @@
-import type { ForecastListResponse, ForecastMetrics } from "@/types/api";
+import type {
+  ForecastListResponse,
+  ForecastMetrics,
+  VelocityHistory,
+} from "@/types/api";
 
 const BASE_URL = process.env.API_URL ?? "";
 
@@ -44,7 +48,10 @@ function createApiClient({ shop, accessToken }: ApiClientOptions) {
         if (search) params.set("search", search);
         return get<ForecastListResponse>(`/api/forecasts?${params.toString()}`);
       },
+
       metrics: () => get<ForecastMetrics>("/api/forecasts/metrics"),
+      velocityHistory: (variantId: string) =>
+        get<VelocityHistory>(`/api/forecasts/${variantId}/velocity-history`),
     },
   };
 }
@@ -55,6 +62,8 @@ export type {
   ForecastMetrics,
   ForecastProduct,
   ForecastStatus,
+  VelocityHistory,
+  VelocityHistoryEntry,
 } from "@/types/api";
 
 export { createApiClient };
