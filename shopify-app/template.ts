@@ -41,10 +41,15 @@ api_version = "${env.SHOPIFY_API_VERSION}"
 scopes = "read_orders,read_all_orders,read_products,read_inventory,read_locations,write_inventory"
 
 [auth]
-redirect_urls = ["${env.APP_URL}"]
+redirect_urls = [
+  "${env.APP_URL}",
+  "${env.APP_URL}/api/auth/callback",
+  "${env.APP_URL}/auth/callback",
+  "${env.APP_URL}/auth/shopify/callback",
+]
 
 [build]
 include_config_on_deploy = true
-automatically_update_urls_on_dev = true
+automatically_update_urls_on_dev = false
 `;
 }
