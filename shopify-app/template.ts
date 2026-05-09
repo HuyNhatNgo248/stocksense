@@ -4,6 +4,7 @@ export interface TomlEnv {
   SHOPIFY_APP_CLIENT_ID: string;
   SHOPIFY_APP_NAME: string;
   APP_URL: string;
+  API_URL: string;
   SHOPIFY_API_VERSION: string;
 }
 
@@ -36,10 +37,10 @@ api_version = "${env.SHOPIFY_API_VERSION}"
 scopes = "read_orders,read_all_orders,read_products,read_inventory,read_locations,write_inventory"
 
 [auth]
-redirect_urls = ["${env.APP_URL}"]
+redirect_urls = ["${env.APP_URL}", "${env.API_URL}"]
 
 [build]
 include_config_on_deploy = true
-automatically_update_urls_on_dev = false
+automatically_update_urls_on_dev = true
 `;
 }

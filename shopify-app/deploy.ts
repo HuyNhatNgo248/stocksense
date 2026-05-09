@@ -70,6 +70,7 @@ class Deployer {
       "SHOPIFY_APP_CLIENT_ID",
       "SHOPIFY_APP_NAME",
       "APP_URL",
+      "API_URL",
       "SHOPIFY_API_VERSION",
     ];
 
