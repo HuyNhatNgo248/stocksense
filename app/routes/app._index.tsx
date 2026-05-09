@@ -23,14 +23,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     accessToken: session.accessToken ?? "",
   });
 
-  const url = new URL(request.url);
-  const page = parseInt(url.searchParams.get("page") ?? "1");
-  const status = url.searchParams.get("status") ?? undefined;
-  const search = url.searchParams.get("search") ?? undefined;
-
   return {
     metrics: api.forecasts.metrics(),
-    inventory: api.forecasts.list({ page, limit: LIMIT, status, search }),
+    inventory: api.forecasts.list({ page: 1, limit: LIMIT }),
   };
 };
 

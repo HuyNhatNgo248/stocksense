@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useFetcher } from "react-router";
 import type {
   Forecast,
   ForecastListResponse,
@@ -49,50 +49,45 @@ export function InventoryTableSkeleton() {
 }
 
 export function InventoryTable({ inventory }: InventoryTableProps) {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { data: forecasts, page, totalPages, total, limit } = inventory;
-  const from = total === 0 ? 0 : (page - 1) * limit + 1;
-  const to = Math.min(page * limit, total);
+  const fetcher = useFetcher<ForecastListResponse>();
+  const [activeFilter, setActiveFilter] = useState<StatusFilter>("All");
+  const [search, setSearch] = useState("");
+  const [, setPage] = useState(inventory.page);
 
-  const activeFilter: StatusFilter =
-    (searchParams.get("status") as StatusFilter | null) ?? "All";
-
-  const [search, setSearch] = useState(searchParams.get("search") ?? "");
-
-  useEffect(() => {
-    const currentSearch = searchParams.get("search") ?? "";
-    if (search === currentSearch) return;
-
-    const timer = setTimeout(() => {
-      const params = new URLSearchParams(searchParams);
-      params.set("page", "1");
-      if (search) {
-        params.set("search", search);
-      } else {
-        params.delete("search");
-      }
-      navigate(`?${params.toString()}`);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [search, navigate, searchParams]);
+  const data = fetcher.data ?? inventory;
+  const { data: forecasts, totalPages, total, limit } = data;
+  const currentPage = data.page;
+  const from = total === 0 ? 0 : (currentPage - 1) * limit + 1;
+  const to = Math.min(currentPage * limit, total);
+  function load(newPage: number, filter: StatusFilter, q: string) {
+    const params = new URLSearchParams({ page: String(newPage), limit: String(limit) });
+    if (filter !== "All") params.set("status", filter.toUpperCase());
+    if (q) params.set("search", q);
+    fetcher.load(`/app/inventory?${params.toString()}`);
+  }
 
   function setFilter(filter: StatusFilter) {
-    const params = new URLSearchParams(searchParams);
-    params.set("page", "1");
-    if (filter === "All") {
-      params.delete("status");
-    } else {
-      params.set("status", filter.toUpperCase());
-    }
-    navigate(`?${params.toString()}`);
+    setActiveFilter(filter);
+    setPage(1);
+    load(1, filter, search);
   }
 
   function goToPage(newPage: number) {
-    const params = new URLSearchParams(searchParams);
-    params.set("page", String(newPage));
-    navigate(`?${params.toString()}`);
+    setPage(newPage);
+    load(newPage, activeFilter, search);
   }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1);
+      const params = new URLSearchParams({ page: "1", limit: String(limit) });
+      if (activeFilter !== "All") params.set("status", activeFilter.toUpperCase());
+      if (search) params.set("search", search);
+      fetcher.load(`/app/inventory?${params.toString()}`);
+    }, 400);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   return (
     <s-box padding="base" background="base" borderRadius="base">
@@ -126,7 +121,7 @@ export function InventoryTable({ inventory }: InventoryTableProps) {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className={`overflow-x-auto transition-opacity duration-150 ${fetcher.state !== "idle" ? "opacity-50 pointer-events-none" : ""}`}>
           <s-table>
             <s-table-header-row>
               <s-table-header listSlot="primary">Product</s-table-header>
@@ -180,18 +175,18 @@ export function InventoryTable({ inventory }: InventoryTableProps) {
                 variant="tertiary"
                 icon="chevron-left"
                 accessibilityLabel="Previous page"
-                disabled={page <= 1 ? true : undefined}
-                onClick={() => goToPage(page - 1)}
+                disabled={currentPage <= 1 ? true : undefined}
+                onClick={() => goToPage(currentPage - 1)}
               />
               <s-text color="subdued">
-                Page {page} of {totalPages}
+                Page {currentPage} of {totalPages}
               </s-text>
               <s-button
                 variant="tertiary"
                 icon="chevron-right"
                 accessibilityLabel="Next page"
-                disabled={page >= totalPages ? true : undefined}
-                onClick={() => goToPage(page + 1)}
+                disabled={currentPage >= totalPages ? true : undefined}
+                onClick={() => goToPage(currentPage + 1)}
               />
             </s-stack>
           </s-stack>
