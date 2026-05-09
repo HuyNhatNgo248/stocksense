@@ -1,12 +1,28 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData, useRouteError } from "react-router";
+import { Outlet, redirect, useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
 import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
+  const { session } = await authenticate.admin(request);
+
+  const apiUrl = process.env.API_URL ?? "";
+  const res = await fetch(`${apiUrl}/api/auth/install?shop=${session.shop}`, {
+    redirect: "manual",
+  });
+
+  if (res.status >= 300 && res.status < 400) {
+    const oauthUrl = res.headers.get("location")!;
+    const url = new URL(request.url);
+    const exitParams = new URLSearchParams({
+      shop: session.shop,
+      host: url.searchParams.get("host") ?? "",
+      exitIframe: oauthUrl,
+    });
+    return redirect(`/auth/exit-iframe?${exitParams}`);
+  }
 
   // eslint-disable-next-line no-undef
   return { apiKey: process.env.SHOPIFY_API_KEY || "" };

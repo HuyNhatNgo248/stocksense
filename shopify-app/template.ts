@@ -23,21 +23,25 @@ api_version = "${env.SHOPIFY_API_VERSION}"
 
   [[webhooks.subscriptions]]
   topics = ["orders/paid"]
-  uri = "/api/webhooks/orders/paid"
+  uri = "${env.API_URL}/api/webhooks/orders/paid"
 
   [[webhooks.subscriptions]]
   topics = ["inventory_levels/update"]
-  uri = "/api/webhooks/inventory_levels/update"
+  uri = "${env.API_URL}/api/webhooks/inventoryLevels/update"
 
   [[webhooks.subscriptions]]
   topics = ["app/uninstalled"]
-  uri = "/api/webhooks/app/uninstalled"
+  uri = "/webhooks/app/uninstalled"
+
+  [[webhooks.subscriptions]]
+  topics = ["app/uninstalled"]
+  uri = "${env.API_URL}/api/webhooks/app/uninstalled"
 
 [access_scopes]
 scopes = "read_orders,read_all_orders,read_products,read_inventory,read_locations,write_inventory"
 
 [auth]
-redirect_urls = ["${env.APP_URL}", "${env.API_URL}"]
+redirect_urls = ["${env.APP_URL}", "${env.APP_URL}/auth/callback"]
 
 [build]
 include_config_on_deploy = true
