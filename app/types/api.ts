@@ -37,3 +37,11 @@ export interface Forecast {
   updatedAt: string;
   product: ForecastProduct;
 }
+
+export interface ForecastListResponse {
+  data: Forecast[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}

@@ -1,10 +1,15 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import type { Forecast, ForecastStatus } from "@/lib/api.server";
+import { useNavigate, useSearchParams } from "react-router";
+import type {
+  Forecast,
+  ForecastListResponse,
+  ForecastStatus,
+} from "@/lib/api.server";
 
 interface InventoryTableProps {
-  forecasts: Forecast[];
+  inventory: ForecastListResponse;
 }
 
 const STATUS_FILTERS = ["All", "Critical", "Reorder", "OK"] as const;
@@ -17,12 +22,16 @@ const STATUS_TONE: Record<ForecastStatus, "critical" | "caution" | "success"> =
     OK: "success",
   };
 
-export function InventoryTable({ forecasts }: InventoryTableProps) {
+export function InventoryTable({ inventory }: InventoryTableProps) {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("All");
   const [search, setSearch] = useState("");
 
+  const { data: forecasts, page, totalPages } = inventory;
+
   const filtered = useMemo(() => {
-    return forecasts.filter((f) => {
+    return forecasts.filter((f: Forecast) => {
       const matchesFilter =
         activeFilter === "All" || f.status === activeFilter.toUpperCase();
       const matchesSearch =
@@ -32,6 +41,12 @@ export function InventoryTable({ forecasts }: InventoryTableProps) {
       return matchesFilter && matchesSearch;
     });
   }, [forecasts, activeFilter, search]);
+
+  function goToPage(newPage: number) {
+    const params = new URLSearchParams(searchParams);
+    params.set("page", String(newPage));
+    navigate(`?${params.toString()}`);
+  }
 
   return (
     <s-box padding="base" background="base" borderRadius="base">
@@ -69,7 +84,13 @@ export function InventoryTable({ forecasts }: InventoryTableProps) {
           </s-box>
         </s-stack>
 
-        <s-table>
+        <s-table
+          paginate
+          hasPreviousPage={page > 1 ? true : undefined}
+          hasNextPage={page < totalPages ? true : undefined}
+          onPreviousPage={() => goToPage(page - 1)}
+          onNextPage={() => goToPage(page + 1)}
+        >
           <s-table-header-row>
             <s-table-header listSlot="primary">Product</s-table-header>
             <s-table-header>SKU</s-table-header>
@@ -81,7 +102,7 @@ export function InventoryTable({ forecasts }: InventoryTableProps) {
           </s-table-header-row>
 
           <s-table-body>
-            {filtered.map((forecast) => (
+            {filtered.map((forecast: Forecast) => (
               <s-table-row key={forecast.id}>
                 <s-table-cell>{forecast.product.title}</s-table-cell>
                 <s-table-cell>

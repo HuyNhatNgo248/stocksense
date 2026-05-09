@@ -6,45 +6,48 @@ interface QuickStatsProps {
 
 export function QuickStats({ metrics }: QuickStatsProps) {
   return (
-    <s-grid
-      gridTemplateColumns="@container (inline-size <= 400px) 1fr, 1fr auto 1fr auto 1fr auto 1fr"
-      gap="small"
-    >
-      <StatCard
-        title="Critical"
-        description="SKUs at or below safety stock with active stockout risk"
-        value={String(metrics.critical)}
-        delta={metrics.delta.criticalSinceYesterday}
-        deltaLabel="since yesterday"
-        invertDelta
-      />
-      <s-divider direction="block" />
-      <StatCard
-        title="Reorder Soon"
-        description="SKUs between safety stock and reorder point that need a PO placed now"
-        value={String(metrics.reorder)}
-        delta={metrics.delta.reorderSinceLastWeek}
-        deltaLabel="this week"
-        invertDelta
-      />
-      <s-divider direction="block" />
-      <StatCard
-        title="Total SKUs"
-        description="Total number of products being tracked and forecasted"
-        value={String(metrics.total)}
-        delta={metrics.delta.skusAddedThisMonth}
-        deltaLabel="this month"
-      />
-      <s-divider direction="block" />
-      <StatCard
-        title="Forecast Accuracy"
-        description="How closely EWMA velocity predictions match actual daily sales"
-        value={`${metrics.forecastAccuracy.toFixed(2)}%`}
-        delta={metrics.delta.accuracyVsLastMonth}
-        deltaLabel="vs last month"
-        deltaSuffix="%"
-      />
-    </s-grid>
+    <div className="overflow-x-auto w-full">
+      <s-grid
+        gridTemplateColumns="1fr auto 1fr auto 1fr auto 1fr"
+        gap="small"
+        minInlineSize="1000px"
+      >
+        <StatCard
+          title="Critical"
+          description="SKUs at or below safety stock with active stockout risk"
+          value={String(metrics.critical)}
+          delta={metrics.delta.criticalSinceYesterday}
+          deltaLabel="since yesterday"
+          invertDelta
+        />
+        <s-divider direction="block" />
+        <StatCard
+          title="Reorder Soon"
+          description="SKUs between safety stock and reorder point that need a PO placed now"
+          value={String(metrics.reorder)}
+          delta={metrics.delta.reorderSinceLastWeek}
+          deltaLabel="this week"
+          invertDelta
+        />
+        <s-divider direction="block" />
+        <StatCard
+          title="Total SKUs"
+          description="Total number of products being tracked and forecasted"
+          value={String(metrics.total)}
+          delta={metrics.delta.skusAddedThisMonth}
+          deltaLabel="this month"
+        />
+        <s-divider direction="block" />
+        <StatCard
+          title="Forecast Accuracy"
+          description="How closely EWMA velocity predictions match actual daily sales"
+          value={`${metrics.forecastAccuracy.toFixed(2)}%`}
+          delta={metrics.delta.accuracyVsLastMonth}
+          deltaLabel="vs last month"
+          deltaSuffix="%"
+        />
+      </s-grid>
+    </div>
   );
 }
 

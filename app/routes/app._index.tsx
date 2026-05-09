@@ -6,6 +6,8 @@ import { createApiClient } from "@/lib/api.server";
 import { QuickStats } from "@/components/dashboard/quick-stats";
 import { InventoryTable } from "@/components/dashboard/inventory-table";
 
+const LIMIT = 20;
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
 
@@ -14,9 +16,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     accessToken: session.accessToken ?? "",
   });
 
+  const url = new URL(request.url);
+  const page = parseInt(url.searchParams.get("page") ?? "1");
+
   const [metrics, inventory] = await Promise.all([
     api.forecasts.metrics(),
-    api.forecasts.list(),
+    api.forecasts.list({ page, limit: LIMIT }),
   ]);
 
   return { metrics, inventory };
@@ -32,7 +37,7 @@ export default function Index() {
           <QuickStats metrics={metrics} />
         </s-box>
 
-        <InventoryTable forecasts={inventory} />
+        <InventoryTable inventory={inventory} />
       </s-stack>
     </s-page>
   );

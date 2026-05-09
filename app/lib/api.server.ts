@@ -1,4 +1,4 @@
-import type { Forecast, ForecastMetrics } from "@/types/api";
+import type { ForecastListResponse, ForecastMetrics } from "@/types/api";
 
 const BASE_URL = process.env.API_URL ?? "";
 
@@ -25,7 +25,11 @@ function createApiClient({ shop, accessToken }: ApiClientOptions) {
 
   return {
     forecasts: {
-      list: () => get<Forecast[]>("/api/forecasts"),
+      list: ({
+        page = 1,
+        limit = 20,
+      }: { page?: number; limit?: number } = {}) =>
+        get<ForecastListResponse>(`/api/forecasts?page=${page}&limit=${limit}`),
       metrics: () => get<ForecastMetrics>("/api/forecasts/metrics"),
     },
   };
@@ -33,6 +37,7 @@ function createApiClient({ shop, accessToken }: ApiClientOptions) {
 
 export type {
   Forecast,
+  ForecastListResponse,
   ForecastMetrics,
   ForecastProduct,
   ForecastStatus,
