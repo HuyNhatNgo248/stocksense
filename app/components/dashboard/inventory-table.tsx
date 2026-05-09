@@ -22,6 +22,32 @@ const STATUS_TONE: Record<ForecastStatus, "critical" | "caution" | "success"> =
     OK: "success",
   };
 
+export function InventoryTableSkeleton() {
+  return (
+    <s-box padding="base" background="base" borderRadius="base">
+      <s-stack gap="base">
+        <div className="flex justify-between items-center animate-pulse">
+          <div className="h-5 w-36 bg-gray-200 rounded" />
+          <div className="h-8 w-56 bg-gray-200 rounded" />
+        </div>
+        <div className="space-y-3 animate-pulse">
+          <div className="h-4 w-full bg-gray-200 rounded" />
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="grid grid-cols-7 gap-4">
+              <div className="h-4 bg-gray-200 rounded col-span-2" />
+              <div className="h-4 bg-gray-200 rounded" />
+              <div className="h-4 bg-gray-200 rounded" />
+              <div className="h-4 bg-gray-200 rounded" />
+              <div className="h-4 bg-gray-200 rounded" />
+              <div className="h-4 bg-gray-200 rounded" />
+            </div>
+          ))}
+        </div>
+      </s-stack>
+    </s-box>
+  );
+}
+
 export function InventoryTable({ inventory }: InventoryTableProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();

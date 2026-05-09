@@ -1,5 +1,30 @@
 import type { ForecastMetrics } from "@/lib/api.server";
 
+export function QuickStatsSkeleton() {
+  return (
+    <div className="overflow-x-auto w-full">
+      <div
+        className="grid gap-4 animate-pulse"
+        style={{
+          gridTemplateColumns: "1fr auto 1fr auto 1fr auto 1fr",
+          minInlineSize: "1000px",
+        }}
+      >
+        {[0, 1, 2, 3].map((i) => (
+          <>
+            <div key={i} className="px-1 py-3 flex flex-col gap-3">
+              <div className="h-4 w-24 bg-gray-200 rounded" />
+              <div className="h-6 w-12 bg-gray-200 rounded" />
+              <div className="h-4 w-32 bg-gray-200 rounded" />
+            </div>
+            {i < 3 && <div key={`d-${i}`} className="w-px bg-gray-200 mx-1" />}
+          </>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 interface QuickStatsProps {
   metrics: ForecastMetrics;
 }

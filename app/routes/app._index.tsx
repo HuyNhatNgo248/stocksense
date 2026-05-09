@@ -1,10 +1,17 @@
+import { Suspense } from "react";
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { Await, useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { createApiClient } from "@/lib/api.server";
-import { QuickStats } from "@/components/dashboard/quick-stats";
-import { InventoryTable } from "@/components/dashboard/inventory-table";
+import {
+  QuickStats,
+  QuickStatsSkeleton,
+} from "@/components/dashboard/quick-stats";
+import {
+  InventoryTable,
+  InventoryTableSkeleton,
+} from "@/components/dashboard/inventory-table";
 
 const LIMIT = 20;
 
@@ -21,12 +28,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const status = url.searchParams.get("status") ?? undefined;
   const search = url.searchParams.get("search") ?? undefined;
 
-  const [metrics, inventory] = await Promise.all([
-    api.forecasts.metrics(),
-    api.forecasts.list({ page, limit: LIMIT, status, search }),
-  ]);
-
-  return { metrics, inventory };
+  return {
+    metrics: api.forecasts.metrics(),
+    inventory: api.forecasts.list({ page, limit: LIMIT, status, search }),
+  };
 };
 
 export default function Index() {
@@ -36,10 +41,16 @@ export default function Index() {
     <s-page heading="Dashboard" inlineSize="large">
       <s-stack gap="large">
         <s-box padding="small" background="base" borderRadius="base">
-          <QuickStats metrics={metrics} />
+          <Suspense fallback={<QuickStatsSkeleton />}>
+            <Await resolve={metrics}>{(m) => <QuickStats metrics={m} />}</Await>
+          </Suspense>
         </s-box>
 
-        <InventoryTable inventory={inventory} />
+        <Suspense fallback={<InventoryTableSkeleton />}>
+          <Await resolve={inventory}>
+            {(inv) => <InventoryTable inventory={inv} />}
+          </Await>
+        </Suspense>
       </s-stack>
     </s-page>
   );
