@@ -41,7 +41,7 @@ api_version = "${env.SHOPIFY_API_VERSION}"
 scopes = "read_orders,read_all_orders,read_products,read_inventory,read_locations,write_inventory"
 
 [auth]
-redirect_urls = ["${env.APP_URL}", "${env.APP_URL}/auth/callback"]
+redirect_urls = ["${env.APP_URL}"]
 
 [build]
 include_config_on_deploy = true
