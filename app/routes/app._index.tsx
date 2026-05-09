@@ -18,10 +18,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const url = new URL(request.url);
   const page = parseInt(url.searchParams.get("page") ?? "1");
+  const status = url.searchParams.get("status") ?? undefined;
+  const search = url.searchParams.get("search") ?? undefined;
 
   const [metrics, inventory] = await Promise.all([
     api.forecasts.metrics(),
-    api.forecasts.list({ page, limit: LIMIT }),
+    api.forecasts.list({ page, limit: LIMIT, status, search }),
   ]);
 
   return { metrics, inventory };
@@ -32,7 +34,7 @@ export default function Index() {
 
   return (
     <s-page heading="Dashboard" inlineSize="large">
-      <s-stack gap="base">
+      <s-stack gap="large">
         <s-box padding="small" background="base" borderRadius="base">
           <QuickStats metrics={metrics} />
         </s-box>

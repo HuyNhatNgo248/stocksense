@@ -28,8 +28,22 @@ function createApiClient({ shop, accessToken }: ApiClientOptions) {
       list: ({
         page = 1,
         limit = 20,
-      }: { page?: number; limit?: number } = {}) =>
-        get<ForecastListResponse>(`/api/forecasts?page=${page}&limit=${limit}`),
+        status,
+        search,
+      }: {
+        page?: number;
+        limit?: number;
+        status?: string;
+        search?: string;
+      } = {}) => {
+        const params = new URLSearchParams({
+          page: String(page),
+          limit: String(limit),
+        });
+        if (status) params.set("status", status);
+        if (search) params.set("search", search);
+        return get<ForecastListResponse>(`/api/forecasts?${params.toString()}`);
+      },
       metrics: () => get<ForecastMetrics>("/api/forecasts/metrics"),
     },
   };
