@@ -12,10 +12,12 @@ interface InventoryTableProps {
   inventory: ForecastListResponse;
   selectedId?: string;
   onRowClick?: (forecast: Forecast) => void;
+  externalFilter?: StatusFilter;
+  onFilterChange?: (filter: StatusFilter) => void;
 }
 
 const STATUS_FILTERS = ["All", "Critical", "Reorder", "OK"] as const;
-type StatusFilter = (typeof STATUS_FILTERS)[number];
+export type StatusFilter = (typeof STATUS_FILTERS)[number];
 
 const STATUS_TONE: Record<ForecastStatus, "critical" | "caution" | "success"> =
   {
@@ -93,7 +95,12 @@ export function InventoryTableSkeleton() {
   );
 }
 
-export function InventoryTable({ inventory, onRowClick }: InventoryTableProps) {
+export function InventoryTable({
+  inventory,
+  onRowClick,
+  externalFilter,
+  onFilterChange,
+}: InventoryTableProps) {
   const fetcher = useFetcher<ForecastListResponse>();
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("All");
   const [search, setSearch] = useState("");
@@ -104,6 +111,7 @@ export function InventoryTable({ inventory, onRowClick }: InventoryTableProps) {
   const currentPage = data.page;
   const from = total === 0 ? 0 : (currentPage - 1) * limit + 1;
   const to = Math.min(currentPage * limit, total);
+
   function load(newPage: number, filter: StatusFilter, q: string) {
     const params = new URLSearchParams({
       page: String(newPage),
@@ -116,6 +124,7 @@ export function InventoryTable({ inventory, onRowClick }: InventoryTableProps) {
 
   function setFilter(filter: StatusFilter) {
     setActiveFilter(filter);
+    onFilterChange?.(filter);
     setPage(1);
     load(1, filter, search);
   }
@@ -124,6 +133,14 @@ export function InventoryTable({ inventory, onRowClick }: InventoryTableProps) {
     setPage(newPage);
     load(newPage, activeFilter, search);
   }
+
+  useEffect(() => {
+    if (!externalFilter || externalFilter === activeFilter) return;
+    setActiveFilter(externalFilter);
+    setPage(1);
+    load(1, externalFilter, search);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalFilter]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

@@ -17,6 +17,7 @@ import {
 import {
   InventoryTable,
   InventoryTableSkeleton,
+  type StatusFilter,
 } from "@/components/dashboard/inventory-table";
 import { ProductDetailPanel } from "@/components/dashboard/product-detail-panel";
 
@@ -41,6 +42,7 @@ export default function Index() {
   const [selectedForecast, setSelectedForecast] = useState<Forecast | null>(
     null,
   );
+  const [activeFilter, setActiveFilter] = useState<StatusFilter>("All");
 
   return (
     <s-page heading="Dashboard" inlineSize="large">
@@ -51,7 +53,12 @@ export default function Index() {
             <s-box padding="small" background="base" borderRadius="base">
               <Suspense fallback={<QuickStatsSkeleton />}>
                 <Await resolve={metrics}>
-                  {(m) => <QuickStats metrics={m} />}
+                  {(m) => (
+                    <QuickStats
+                      metrics={m}
+                      onFilterChange={setActiveFilter}
+                    />
+                  )}
                 </Await>
               </Suspense>
             </s-box>
@@ -67,6 +74,8 @@ export default function Index() {
                         prev?.id === f.id ? null : f,
                       )
                     }
+                    externalFilter={activeFilter}
+                    onFilterChange={setActiveFilter}
                   />
                 )}
               </Await>

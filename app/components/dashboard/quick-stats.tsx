@@ -1,4 +1,6 @@
 import type { ForecastMetrics } from "@/lib/api.server";
+import type { StatusFilter } from "@/components/dashboard/inventory-table";
+import { cn } from "@/lib/cn";
 
 export function QuickStatsSkeleton() {
   return (
@@ -27,9 +29,10 @@ export function QuickStatsSkeleton() {
 
 interface QuickStatsProps {
   metrics: ForecastMetrics;
+  onFilterChange?: (filter: StatusFilter) => void;
 }
 
-export function QuickStats({ metrics }: QuickStatsProps) {
+export function QuickStats({ metrics, onFilterChange }: QuickStatsProps) {
   return (
     <div className="overflow-x-auto w-full">
       <s-grid
@@ -44,6 +47,7 @@ export function QuickStats({ metrics }: QuickStatsProps) {
           delta={metrics.delta.criticalSinceYesterday}
           deltaLabel="since yesterday"
           invertDelta
+          onFilter={() => onFilterChange?.("Critical")}
         />
         <s-divider direction="block" />
         <StatCard
@@ -53,6 +57,7 @@ export function QuickStats({ metrics }: QuickStatsProps) {
           delta={metrics.delta.reorderSinceLastWeek}
           deltaLabel="this week"
           invertDelta
+          onFilter={() => onFilterChange?.("Reorder")}
         />
         <s-divider direction="block" />
         <StatCard
@@ -84,6 +89,7 @@ interface StatCardProps {
   deltaLabel: string;
   deltaSuffix?: string;
   invertDelta?: boolean;
+  onFilter?: () => void;
 }
 
 function StatCard({
@@ -94,6 +100,7 @@ function StatCard({
   deltaLabel,
   deltaSuffix = "",
   invertDelta = false,
+  onFilter,
 }: StatCardProps) {
   const tooltipId = `${title}-tooltip`;
   const isGood = delta === null ? null : invertDelta ? delta < 0 : delta > 0;
@@ -104,25 +111,27 @@ function StatCard({
   const sign = delta !== null && delta > 0 ? "+" : "";
 
   return (
-    <s-clickable
-      paddingBlock="small-400"
-      paddingInline="small-100"
-      borderRadius="base"
-    >
-      <s-tooltip id={tooltipId}>{description}</s-tooltip>
-      <s-grid gap="small-300">
-        <s-heading>{title}</s-heading>
-        <s-stack direction="inline" gap="small-200" alignItems="center">
-          <s-text interestFor={tooltipId}>{value}</s-text>
-          {delta && (
-            <s-badge tone={badgeTone} icon={badgeIcon}>
-              {sign}
-              {delta}
-              {deltaSuffix} {deltaLabel}
-            </s-badge>
-          )}
-        </s-stack>
-      </s-grid>
-    </s-clickable>
+    <div className={cn(onFilter && "cursor-pointer")} onClick={onFilter}>
+      <s-clickable
+        paddingBlock="small-400"
+        paddingInline="small-100"
+        borderRadius="base"
+      >
+        <s-tooltip id={tooltipId}>{description}</s-tooltip>
+        <s-grid gap="small-300">
+          <s-heading>{title}</s-heading>
+          <s-stack direction="inline" gap="small-200" alignItems="center">
+            <s-text interestFor={tooltipId}>{value}</s-text>
+            {delta && (
+              <s-badge tone={badgeTone} icon={badgeIcon}>
+                {sign}
+                {delta}
+                {deltaSuffix} {deltaLabel}
+              </s-badge>
+            )}
+          </s-stack>
+        </s-grid>
+      </s-clickable>
+    </div>
   );
 }
