@@ -1,16 +1,16 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 
-export const loader = ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
-  const shop = url.searchParams.get("shop");
-  const embedded = url.searchParams.get("embedded");
-  const idToken = url.searchParams.get("id_token");
+  const shop = url.searchParams.get("shop") ?? "";
+  const code = url.searchParams.get("code") ?? "";
+  const hmac = url.searchParams.get("hmac") ?? "";
+  const apiUrl = process.env.API_URL ?? "";
 
-  // Install flow: Shopify sends shop+hmac but no embedded session yet
-  if (shop && !embedded && !idToken) {
-    const apiUrl = process.env.API_URL ?? "";
-    return redirect(`${apiUrl}/api/auth/install?${url.searchParams.toString()}`);
+  if (shop && code && hmac) {
+    const params = new URLSearchParams({ code, hmac, shop });
+    return redirect(`${apiUrl}/api/auth/callback?${params}`);
   }
 
   return redirect(`/app?${url.searchParams.toString()}`);
