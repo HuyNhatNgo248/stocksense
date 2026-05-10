@@ -151,10 +151,6 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
   const reorderPoint = Math.round(forecast.reorderPoint);
   const suggestedOrder =
     Math.round(forecast.velocityPerDay * product.leadTimeDays) + safetyStock;
-  const stockVsRop =
-    reorderPoint > 0
-      ? Math.round((product.currentStock / reorderPoint) * 100)
-      : 100;
 
   const summary = isCritical
     ? `Stock (${product.currentStock}) is below safety stock (${safetyStock}). Must reorder before the ${product.leadTimeDays}-day lead time expires.`
@@ -220,27 +216,10 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
                   urgent={isCritical}
                 />
                 <s-divider direction="block" />
-                <Metric label="Safety Stock" value={`${safetyStock} units`} />
-                <s-divider direction="block" />
-                <Metric label="Reorder Pt." value={`${reorderPoint} units`} />
-                <s-divider direction="block" />
-                <Metric label="Lead Time" value={`${product.leadTimeDays}d`} />
-                <s-divider direction="block" />
-                <Metric
-                  label="Velocity"
-                  value={`${forecast.velocityPerDay.toFixed(2)}/day`}
-                />
-                <s-divider direction="block" />
                 <Metric
                   label="Stockout In"
                   value={daysLeft === 0 ? "Now" : `${daysLeft}d`}
                   urgent={daysLeft <= 3}
-                />
-                <s-divider direction="block" />
-                <Metric
-                  label="Stock vs ROP"
-                  value={`${stockVsRop}%`}
-                  urgent={stockVsRop < 30}
                 />
                 <s-divider direction="block" />
                 <Metric

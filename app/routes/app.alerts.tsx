@@ -38,7 +38,7 @@ export default function AlertsPage() {
   const { critical, reorder } = useLoaderData<typeof loader>();
 
   return (
-    <s-page heading="Alerts" inlineSize="large">
+    <s-page heading="Alerts">
       <Suspense fallback={<AlertsListSkeleton />}>
         <Await resolve={Promise.all([critical, reorder])}>
           {([c, r]) => <AlertsList critical={c} reorder={r} />}
