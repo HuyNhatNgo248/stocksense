@@ -22,8 +22,6 @@ import {
 } from "@/components/dashboard/inventory-table";
 import { ProductDetailPanel } from "@/components/dashboard/product-detail-panel";
 
-const LIMIT = 20;
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
 
@@ -34,7 +32,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return {
     metrics: api.forecasts.metrics(),
-    inventory: api.forecasts.list({ page: 1, limit: LIMIT }),
+    inventory: api.forecasts.list({ page: 1 }),
   };
 };
 
@@ -55,10 +53,7 @@ export default function Index() {
               <Suspense fallback={<QuickStatsSkeleton />}>
                 <Await resolve={metrics}>
                   {(m) => (
-                    <QuickStats
-                      metrics={m}
-                      onFilterChange={setActiveFilter}
-                    />
+                    <QuickStats metrics={m} onFilterChange={setActiveFilter} />
                   )}
                 </Await>
               </Suspense>
