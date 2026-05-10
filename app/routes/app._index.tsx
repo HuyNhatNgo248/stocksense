@@ -6,6 +6,7 @@ import type {
   ShouldRevalidateFunction,
 } from "react-router";
 import { Await, useLoaderData } from "react-router";
+import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { createApiClient } from "@/lib/api.server";
@@ -102,6 +103,10 @@ export default function Index() {
       </div>
     </s-page>
   );
+}
+
+export function ErrorBoundary() {
+  return <AppErrorBoundary heading="Dashboard" />;
 }
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({

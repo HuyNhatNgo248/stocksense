@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData } from "react-router";
+import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { createApiClient } from "@/lib/api.server";
@@ -45,6 +46,10 @@ export default function AlertsPage() {
       </Suspense>
     </s-page>
   );
+}
+
+export function ErrorBoundary() {
+  return <AppErrorBoundary heading="Alerts" />;
 }
 
 export const headers: HeadersFunction = (headersArgs) => {
