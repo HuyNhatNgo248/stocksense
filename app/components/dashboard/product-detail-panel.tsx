@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
 import type { Forecast, VelocityHistory } from "@/lib/api.server";
 import { VelocityTrend } from "@/components/dashboard/velocity-trend";
@@ -29,21 +29,50 @@ function MetricRow({ label, value }: { label: string; value: string }) {
 
 // ── Sections ──────────────────────────────────────────────────────────────────
 
+function useVariantImage(variantId: string) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/app/variant-image?variantId=${encodeURIComponent(variantId)}`)
+      .then((r) => r.json())
+      .then((d: { url: string | null }) => setImageUrl(d.url))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [variantId]);
+
+  return { imageUrl, loading };
+}
+
 function PanelHeader({
   title,
   sku,
+  variantId,
   onClose,
 }: {
   title: string;
   sku: string;
+  variantId: string;
   onClose: () => void;
 }) {
+  const { imageUrl, loading } = useVariantImage(variantId);
+
   return (
     <div className="flex justify-between items-start gap-2">
-      <s-stack gap="small-400">
-        <s-heading>{title}</s-heading>
-        <s-text color="subdued">{sku}</s-text>
-      </s-stack>
+      <div className="flex items-start gap-3 min-w-0">
+        <div className="shrink-0 w-14 h-14 rounded overflow-hidden bg-gray-100">
+          {loading ? (
+            <div className="w-full h-full animate-pulse bg-gray-200" />
+          ) : imageUrl ? (
+            <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
+          ) : null}
+        </div>
+        <s-stack gap="small-400">
+          <s-heading>{title}</s-heading>
+          <s-text color="subdued">{sku}</s-text>
+        </s-stack>
+      </div>
       <s-button
         variant="tertiary"
         icon="x"
@@ -184,6 +213,7 @@ export function ProductDetailPanel({
         <PanelHeader
           title={product.title}
           sku={product.sku}
+          variantId={product.shopifyVariantId}
           onClose={onClose}
         />
         <s-divider />
