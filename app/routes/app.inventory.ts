@@ -1,8 +1,11 @@
-import type { LoaderFunctionArgs, ShouldRevalidateFunction } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction,
+} from "react-router";
 import { authenticate } from "../shopify.server";
 import { createApiClient } from "@/lib/api.server";
 
-const LIMIT = 20;
+const PAGE_LIMIT = 20;
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   formAction,
@@ -22,8 +25,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const url = new URL(request.url);
   const page = parseInt(url.searchParams.get("page") ?? "1");
+  const limit = parseInt(url.searchParams.get("limit") ?? `${PAGE_LIMIT}`);
   const status = url.searchParams.get("status")?.toUpperCase() ?? undefined;
   const search = url.searchParams.get("search") ?? undefined;
 
-  return api.forecasts.list({ page, limit: LIMIT, status, search });
+  const data = await api.forecasts.list({ page, limit, status, search });
+  return Response.json(data);
 };

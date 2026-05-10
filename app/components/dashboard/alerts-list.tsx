@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useFetcher } from "react-router";
+import { PAGE_LIMIT } from "@/routes/app.alerts";
+
 import type {
   Forecast,
   ForecastListResponse,
@@ -68,32 +69,51 @@ function Metric({
   label,
   value,
   urgent,
-  highlight,
+  displayAsChip,
 }: {
   label: string;
   value: string;
   urgent?: boolean;
-  highlight?: boolean;
+  displayAsChip?: boolean;
 }) {
-  const tone: TextTone | undefined = urgent
-    ? "critical"
-    : highlight
-      ? "info"
-      : undefined;
+  const tone: TextTone | undefined = urgent ? "critical" : undefined;
 
   return (
     <s-stack gap="small-100">
       <s-heading>{label}</s-heading>
-      <s-text tone={tone}>{value}</s-text>
+      {displayAsChip ? (
+        <s-chip>{value}</s-chip>
+      ) : (
+        <s-text tone={tone}>{value}</s-text>
+      )}
     </s-stack>
   );
 }
 
 // ── Alert card ────────────────────────────────────────────────────────────────
 
+function useVariantImage(variantId: string) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/app/variant-image?variantId=${encodeURIComponent(variantId)}`)
+      .then((r) => r.json())
+      .then((d: { url: string | null }) => setImageUrl(d.url))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [variantId]);
+
+  return { imageUrl, loading };
+}
+
 function AlertCard({ forecast }: { forecast: Forecast }) {
   const { product } = forecast;
   const isCritical = forecast.status === "CRITICAL";
+  const { imageUrl, loading: imageLoading } = useVariantImage(
+    product.shopifyVariantId,
+  );
   const daysLeft = Math.max(0, Math.floor(forecast.daysOfStockRemaining));
   const safetyStock = Math.round(forecast.safetyStock);
   const reorderPoint = Math.round(forecast.reorderPoint);
@@ -126,14 +146,29 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
               alignItems="start"
               justifyContent="space-between"
             >
-              <s-stack gap="small-400">
-                <s-stack direction="inline" gap="small-300" alignItems="center">
-                  <s-heading>{product.title}</s-heading>
-                  <s-badge tone={isCritical ? "critical" : "caution"}>
-                    {isCritical ? "Critical" : "Reorder"}
-                  </s-badge>
+              <s-stack direction="inline" gap="base" alignItems="start">
+                {imageLoading ? (
+                  <div className="w-12 h-12 rounded bg-gray-200 animate-pulse shrink-0" />
+                ) : imageUrl ? (
+                  <img
+                    src={imageUrl}
+                    alt={product.title}
+                    className="w-12 h-12 rounded object-cover shrink-0"
+                  />
+                ) : null}
+                <s-stack gap="small-400">
+                  <s-stack
+                    direction="inline"
+                    gap="small-300"
+                    alignItems="center"
+                  >
+                    <s-heading>{product.title}</s-heading>
+                    <s-badge tone={isCritical ? "critical" : "caution"}>
+                      {isCritical ? "Critical" : "Reorder"}
+                    </s-badge>
+                  </s-stack>
+                  <s-text color="subdued">{product.sku}</s-text>
                 </s-stack>
-                <s-text color="subdued">{product.sku}</s-text>
               </s-stack>
               <s-stack direction="inline" gap="small-200">
                 {/* <s-button variant="primary" icon="receipt">
@@ -176,14 +211,14 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
               value={`${stockVsRop}%`}
               urgent={stockVsRop < 30}
             />
-          </s-stack>
+            <s-divider direction="block" />
 
-          {/* Suggested order */}
-          <Metric
-            label="Suggest Order"
-            value={`${suggestedOrder} units`}
-            highlight
-          />
+            <Metric
+              label="Suggest Order"
+              value={`${suggestedOrder} units`}
+              displayAsChip
+            />
+          </s-stack>
         </s-stack>
       </s-box>
     </div>
@@ -191,8 +226,6 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
 }
 
 // ── Section with pagination ───────────────────────────────────────────────────
-
-const LIMIT = 20;
 
 function AlertSection({
   title,
@@ -207,24 +240,26 @@ function AlertSection({
   initial: ForecastListResponse;
   emptyMessage: string;
 }) {
-  const fetcher = useFetcher<ForecastListResponse>();
   const [forecasts, setForecasts] = useState<Forecast[]>(initial.data);
   const [currentPage, setCurrentPage] = useState(initial.page);
-  const totalPages = fetcher.data?.totalPages ?? initial.totalPages;
-  const total = fetcher.data?.total ?? initial.total;
+  const [totalPages, setTotalPages] = useState(initial.totalPages);
+  const [total, setTotal] = useState(initial.total);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (fetcher.data) {
-      setForecasts((prev) => [...prev, ...fetcher.data!.data]);
+  async function loadMore() {
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `/app/inventory?status=${status}&page=${currentPage + 1}&limit=${PAGE_LIMIT}`,
+      );
+      const data: ForecastListResponse = await res.json();
+      setForecasts((prev) => [...prev, ...data.data]);
+      setCurrentPage(data.page);
+      setTotalPages(data.totalPages);
+      setTotal(data.total);
+    } finally {
+      setLoading(false);
     }
-  }, [fetcher.data]);
-
-  function loadMore() {
-    const nextPage = currentPage + 1;
-    setCurrentPage(nextPage);
-    fetcher.load(
-      `/app/inventory?status=${status}&page=${nextPage}&limit=${LIMIT}`,
-    );
   }
 
   const hasMore = currentPage < totalPages;
@@ -250,7 +285,7 @@ function AlertSection({
               <s-button
                 variant="secondary"
                 onClick={loadMore}
-                loading={fetcher.state !== "idle" ? true : undefined}
+                loading={loading ? true : undefined}
               >
                 Load more ({forecasts.length} of {total})
               </s-button>

@@ -9,6 +9,8 @@ import {
   AlertsListSkeleton,
 } from "@/components/dashboard/alerts-list";
 
+export const PAGE_LIMIT = 10;
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
 
@@ -18,8 +20,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   });
 
   return {
-    critical: api.forecasts.list({ page: 1, limit: 20, status: "CRITICAL" }),
-    reorder: api.forecasts.list({ page: 1, limit: 20, status: "REORDER" }),
+    critical: api.forecasts.list({
+      page: 1,
+      limit: PAGE_LIMIT,
+      status: "CRITICAL",
+    }),
+    reorder: api.forecasts.list({
+      page: 1,
+      limit: PAGE_LIMIT,
+      status: "REORDER",
+    }),
   };
 };
 
