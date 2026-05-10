@@ -7,6 +7,8 @@ export function useVelocityHistory(variantId: string) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!variantId) return;
+
     setLoading(true);
     fetch("/app/velocity-history", {
       method: "POST",

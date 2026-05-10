@@ -16,6 +16,7 @@ import { useVelocityHistory } from "@/hooks/use-velocity-history";
 import { useVariantImage } from "@/hooks/use-variant-image";
 import { DemandTrend } from "@/components/alerts/demand-trend";
 import { Metric } from "@/components/alerts/metric";
+import { ProductVariantLink } from "@/components/product-variant-link";
 
 export function AlertsListSkeleton() {
   return (
@@ -72,13 +73,8 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
   );
   const daysLeft = Math.max(0, Math.floor(forecast.daysOfStockRemaining));
   const safetyStock = Math.round(forecast.safetyStock);
-  const reorderPoint = Math.round(forecast.reorderPoint);
   const suggestedOrder =
     Math.round(forecast.velocityPerDay * product.leadTimeDays) + safetyStock;
-
-  const summary = isCritical
-    ? `Stock (${product.currentStock}) is below safety stock (${safetyStock}). Must reorder before the ${product.leadTimeDays}-day lead time expires.`
-    : `Stock (${product.currentStock}) is approaching reorder point (${reorderPoint}). Order soon to avoid a stockout.`;
 
   const borderColor = isCritical
     ? "var(--s-color-icon-critical, #D72C0D)"
@@ -92,42 +88,49 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
       <s-box background="base" borderRadius="base" padding="base">
         <s-stack gap="large">
           {/* Content */}
-          <s-stack gap="small-200">
-            <s-stack
-              direction="inline"
-              alignItems="start"
-              justifyContent="space-between"
-            >
-              <s-stack direction="inline" gap="base" alignItems="start">
-                {imageLoading ? (
-                  <div className="w-12 h-12 rounded bg-gray-200 animate-pulse shrink-0" />
-                ) : imageUrl ? (
-                  <img
-                    src={imageUrl}
-                    alt={product.title}
-                    className="w-12 h-12 rounded object-cover shrink-0"
-                  />
-                ) : null}
-                <s-stack gap="small-400">
-                  <s-stack
-                    direction="inline"
-                    gap="small-300"
-                    alignItems="center"
-                  >
-                    <s-heading>{product.title}</s-heading>
-                    <s-badge tone={isCritical ? "critical" : "caution"}>
-                      {isCritical ? "Critical" : "Reorder"}
-                    </s-badge>
+          <s-stack gap="small-300">
+            <s-stack gap="small-200">
+              <s-stack
+                direction="inline"
+                alignItems="start"
+                justifyContent="space-between"
+              >
+                <s-stack direction="inline" gap="base" alignItems="start">
+                  {imageLoading ? (
+                    <div className="w-12 h-12 rounded bg-gray-200 animate-pulse shrink-0" />
+                  ) : imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt={product.title}
+                      className="w-12 h-12 rounded object-cover shrink-0"
+                    />
+                  ) : null}
+                  <s-stack gap="small-400">
+                    <s-stack
+                      direction="inline"
+                      gap="small-300"
+                      alignItems="center"
+                    >
+                      <ProductVariantLink
+                        shopifyProductId={product.shopifyProductId}
+                        shopifyVariantId={product.shopifyVariantId}
+                      >
+                        <s-heading>{product.title}</s-heading>
+                      </ProductVariantLink>
+                      <s-badge tone={isCritical ? "critical" : "caution"}>
+                        {isCritical ? "Critical" : "Reorder"}
+                      </s-badge>
+                    </s-stack>
+                    <s-text color="subdued">{product.sku}</s-text>
                   </s-stack>
-                  <s-text color="subdued">{product.sku}</s-text>
                 </s-stack>
-              </s-stack>
-              <s-stack direction="inline" gap="small-200">
-                <DemandHistoryButton modalId={modalId} />
+                <s-stack direction="inline" gap="small-200">
+                  <DemandHistoryButton modalId={modalId} />
+                </s-stack>
               </s-stack>
             </s-stack>
 
-            <s-text color="subdued">{summary}</s-text>
+            <s-divider />
           </s-stack>
 
           {/* Metrics + sparkline */}
@@ -139,6 +142,7 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
                   value={`${product.currentStock} units`}
                   urgent={isCritical}
                 />
+
                 <s-divider direction="block" />
                 <Metric
                   label="Stockout In"

@@ -4,6 +4,11 @@ import type { Forecast, VelocityHistory } from "@/lib/api.server";
 import { VelocityTrend } from "@/components/dashboard/velocity-trend";
 import { useVariantImage } from "@/hooks/use-variant-image";
 import {
+  ProductVariantLink,
+  type ProductVariantLinkProps,
+} from "@/components/product-variant-link";
+
+import {
   DemandHistoryButton,
   DemandHistoryModal,
 } from "@/components/demand-history";
@@ -30,17 +35,21 @@ function MetricRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+interface PanelHeaderProps extends Omit<ProductVariantLinkProps, "children"> {
+  title: string;
+  sku: string;
+  variantId: string;
+  onClose: () => void;
+}
+
 function PanelHeader({
   title,
   sku,
   variantId,
   onClose,
-}: {
-  title: string;
-  sku: string;
-  variantId: string;
-  onClose: () => void;
-}) {
+  shopifyProductId,
+  shopifyVariantId,
+}: PanelHeaderProps) {
   const { imageUrl, loading } = useVariantImage(variantId);
 
   return (
@@ -58,7 +67,12 @@ function PanelHeader({
           ) : null}
         </div>
         <s-stack gap="small-400">
-          <s-heading>{title}</s-heading>
+          <ProductVariantLink
+            shopifyProductId={shopifyProductId}
+            shopifyVariantId={shopifyVariantId}
+          >
+            <s-heading>{title}</s-heading>
+          </ProductVariantLink>
           <s-text color="subdued">{sku}</s-text>
         </s-stack>
       </div>
@@ -199,6 +213,8 @@ export function ProductDetailPanel({
             title={product.title}
             sku={product.sku}
             variantId={product.shopifyVariantId}
+            shopifyProductId={product.shopifyProductId}
+            shopifyVariantId={product.shopifyVariantId}
             onClose={onClose}
           />
           <s-divider />
@@ -210,6 +226,8 @@ export function ProductDetailPanel({
             velocity={velocity}
           />
           <s-divider />
+          <TrendSection variantId={product.shopifyVariantId} />
+          <s-divider />
           <ForecastFormula
             velocity={velocity}
             stddev={stddev}
@@ -217,8 +235,6 @@ export function ProductDetailPanel({
             safetyStock={safetyStock}
             reorderPoint={reorderPoint}
           />
-          <s-divider />
-          <TrendSection variantId={product.shopifyVariantId} />
           <s-divider />
           <PanelActions modalId={modalId} />
         </s-stack>

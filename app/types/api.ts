@@ -20,6 +20,7 @@ export interface ForecastProduct {
   sku: string;
   currentStock: number;
   leadTimeDays: number;
+  shopifyProductId: string;
   shopifyVariantId: string;
 }
 
