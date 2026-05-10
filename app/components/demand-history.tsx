@@ -21,15 +21,15 @@ function useVelocityHistory(variantId: string) {
   return { data, loading };
 }
 
-export function DemandHistoryButton({
-  modalId,
-  icon,
-}: {
-  modalId: string;
-  icon?: string;
-}) {
+export function DemandHistoryButton({ modalId }: { modalId: string }) {
   return (
-    <s-button variant="secondary" icon={icon} commandFor={modalId} command="--show">
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    <s-button
+      variant="secondary"
+      icon={"page-list"}
+      commandFor={modalId}
+      command="--show"
+    >
       View Demand History
     </s-button>
   );
@@ -53,7 +53,8 @@ export function DemandHistoryModal({
   );
 
   const data = externalData !== undefined ? externalData : fetched;
-  const loading = externalLoading !== undefined ? externalLoading : fetchLoading;
+  const loading =
+    externalLoading !== undefined ? externalLoading : fetchLoading;
 
   return (
     <s-modal

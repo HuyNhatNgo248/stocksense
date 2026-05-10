@@ -189,13 +189,10 @@ function PanelActions({ modalId }: { modalId: string }) {
   return (
     <s-stack gap="small-300">
       <SectionLabel>Actions</SectionLabel>
-      <s-button variant="primary" icon="receipt">
-        Create Purchase Order
-      </s-button>
       <s-button variant="secondary" icon="info">
         Explain Calculation
       </s-button>
-      <DemandHistoryButton modalId={modalId} icon="chart-stacked" />
+      <DemandHistoryButton modalId={modalId} />
     </s-stack>
   );
 }

@@ -166,7 +166,7 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
 
   return (
     <div
-      className="rounded-lg overflow-hidden border-l-4"
+      className="rounded-lg overflow-hidden border-l-6"
       style={{ borderLeftColor: borderColor }}
     >
       <s-box background="base" borderRadius="base" padding="base">
@@ -250,7 +250,7 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
                 />
                 <s-divider direction="block" />
                 {/* Sparkline — always visible, anchored right */}
-                <div className="shrink-0 flex flex-col items-center gap-0.5">
+                <div className="shrink-0 flex flex-col gap-0.5">
                   <s-heading>Demand</s-heading>
                   {velocityLoading || !velocityData ? (
                     <div className="w-20 h-10 rounded animate-pulse bg-gray-200" />
