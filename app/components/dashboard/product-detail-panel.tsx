@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useFetcher } from "react-router";
 import type { Forecast, VelocityHistory } from "@/lib/api.server";
 import { VelocityTrend } from "@/components/dashboard/velocity-trend";
+import { useVariantImage } from "@/hooks/use-variant-image";
 import {
   DemandHistoryButton,
   DemandHistoryModal,
@@ -11,8 +12,6 @@ interface ProductDetailPanelProps {
   forecast: Forecast;
   onClose: () => void;
 }
-
-// ── Primitives ────────────────────────────────────────────────────────────────
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -29,24 +28,6 @@ function MetricRow({ label, value }: { label: string; value: string }) {
       <span className="text-sm font-semibold">{value}</span>
     </div>
   );
-}
-
-// ── Sections ──────────────────────────────────────────────────────────────────
-
-function useVariantImage(variantId: string) {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-    fetch(`/app/variant-image?variantId=${encodeURIComponent(variantId)}`)
-      .then((r) => r.json())
-      .then((d: { url: string | null }) => setImageUrl(d.url))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [variantId]);
-
-  return { imageUrl, loading };
 }
 
 function PanelHeader({

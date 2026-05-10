@@ -1,38 +1,13 @@
-import { useState, useEffect } from "react";
 import type { VelocityHistory } from "@/types/api";
 
-function useVelocityHistory(variantId: string) {
-  const [data, setData] = useState<VelocityHistory | null>(null);
-  const [loading, setLoading] = useState(true);
+import { useVelocityHistory } from "@/hooks/use-velocity-history";
 
-  useEffect(() => {
-    setLoading(true);
-    fetch("/app/velocity-history", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ variantId }),
-    })
-      .then((r) => r.json())
-      .then((d: VelocityHistory) => setData(d))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [variantId]);
-
-  return { data, loading };
-}
-
-export function DemandHistoryButton({ modalId }: { modalId: string }) {
-  return (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    <s-button
-      variant="secondary"
-      icon={"page-list"}
-      commandFor={modalId}
-      command="--show"
-    >
-      View Demand History
-    </s-button>
-  );
+interface DemandHistoryModalProps {
+  modalId: string;
+  productTitle: string;
+  variantId: string;
+  data?: VelocityHistory | null;
+  loading?: boolean;
 }
 
 export function DemandHistoryModal({
@@ -41,13 +16,7 @@ export function DemandHistoryModal({
   variantId,
   data: externalData,
   loading: externalLoading,
-}: {
-  modalId: string;
-  productTitle: string;
-  variantId: string;
-  data?: VelocityHistory | null;
-  loading?: boolean;
-}) {
+}: DemandHistoryModalProps) {
   const { data: fetched, loading: fetchLoading } = useVelocityHistory(
     externalData !== undefined ? "" : variantId,
   );
@@ -92,5 +61,19 @@ export function DemandHistoryModal({
         Close
       </s-button>
     </s-modal>
+  );
+}
+
+export function DemandHistoryButton({ modalId }: { modalId: string }) {
+  return (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    <s-button
+      variant="secondary"
+      icon={"page-list"}
+      commandFor={modalId}
+      command="--show"
+    >
+      View Demand History
+    </s-button>
   );
 }

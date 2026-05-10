@@ -1,21 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { PAGE_LIMIT } from "@/routes/app.alerts";
 
-import { AreaChart, Area } from "recharts";
 import type {
   Forecast,
   ForecastListResponse,
   ForecastStatus,
-  VelocityHistory,
 } from "@/types/api";
 import {
   DemandHistoryButton,
   DemandHistoryModal,
 } from "@/components/demand-history";
-
-// ── Skeleton ──────────────────────────────────────────────────────────────────
+import { useVelocityHistory } from "@/hooks/use-velocity-history";
+import { useVariantImage } from "@/hooks/use-variant-image";
+import { DemandTrend } from "@/components/alerts/demand-trend";
+import { Metric } from "@/components/alerts/metric";
 
 export function AlertsListSkeleton() {
   return (
@@ -58,82 +58,6 @@ export function AlertsListSkeleton() {
       ))}
     </s-stack>
   );
-}
-
-// ── Metric item ───────────────────────────────────────────────────────────────
-
-type TextTone =
-  | "info"
-  | "success"
-  | "warning"
-  | "critical"
-  | "auto"
-  | "neutral"
-  | "caution";
-
-function Metric({
-  label,
-  value,
-  urgent,
-  displayAsBadge,
-}: {
-  label: string;
-  value: string;
-  urgent?: boolean;
-  displayAsBadge?: {
-    tone: TextTone;
-  };
-}) {
-  const tone: TextTone | undefined = urgent ? "critical" : undefined;
-
-  return (
-    <s-stack gap="small-100">
-      <s-heading>{label}</s-heading>
-      {displayAsBadge ? (
-        <s-badge tone={displayAsBadge.tone}>{value}</s-badge>
-      ) : (
-        <s-text tone={tone}>{value}</s-text>
-      )}
-    </s-stack>
-  );
-}
-
-// ── Alert card ────────────────────────────────────────────────────────────────
-
-function useVelocityHistory(variantId: string) {
-  const [data, setData] = useState<VelocityHistory | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-    fetch("/app/velocity-history", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ variantId }),
-    })
-      .then((r) => r.json())
-      .then((d: VelocityHistory) => setData(d))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [variantId]);
-
-  return { data, loading };
-}
-
-function useVariantImage(variantId: string) {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-    fetch(`/app/variant-image?variantId=${encodeURIComponent(variantId)}`)
-      .then((r) => r.json())
-      .then((d: { url: string | null }) => setImageUrl(d.url))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [variantId]);
-
-  return { imageUrl, loading };
 }
 
 function AlertCard({ forecast }: { forecast: Forecast }) {
@@ -231,41 +155,11 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
                 {/* Sparkline — always visible, anchored right */}
                 <div className="shrink-0 flex flex-col gap-0.5">
                   <s-heading>Demand</s-heading>
-                  {velocityLoading || !velocityData ? (
-                    <div className="w-20 h-10 rounded animate-pulse bg-gray-200" />
-                  ) : (
-                    <AreaChart width={80} height={40} data={velocityData}>
-                      <defs>
-                        <linearGradient
-                          id={`spark-${forecast.id}`}
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
-                          <stop
-                            offset="5%"
-                            stopColor="#eab308"
-                            stopOpacity={0.3}
-                          />
-                          <stop
-                            offset="95%"
-                            stopColor="#eab308"
-                            stopOpacity={0}
-                          />
-                        </linearGradient>
-                      </defs>
-                      <Area
-                        type="monotone"
-                        dataKey="ewmaVelocity"
-                        stroke="#eab308"
-                        strokeWidth={1.5}
-                        fill={`url(#spark-${forecast.id})`}
-                        dot={false}
-                        isAnimationActive={false}
-                      />
-                    </AreaChart>
-                  )}
+                  <DemandTrend
+                    forecast={forecast}
+                    velocityData={velocityData}
+                    velocityLoading={velocityLoading}
+                  />
                 </div>
               </s-stack>
             </div>
