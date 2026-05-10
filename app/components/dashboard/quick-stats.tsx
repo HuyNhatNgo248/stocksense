@@ -1,6 +1,5 @@
 import type { ForecastMetrics } from "@/lib/api.server";
 import type { StatusFilter } from "@/components/dashboard/inventory-table";
-import { cn } from "@/lib/cn";
 
 export function QuickStatsSkeleton() {
   return (
@@ -111,27 +110,26 @@ function StatCard({
   const sign = delta !== null && delta > 0 ? "+" : "";
 
   return (
-    <div className={cn(onFilter && "cursor-pointer")} onClick={onFilter}>
-      <s-clickable
-        paddingBlock="small-400"
-        paddingInline="small-100"
-        borderRadius="base"
-      >
-        <s-tooltip id={tooltipId}>{description}</s-tooltip>
-        <s-grid gap="small-300">
-          <s-heading>{title}</s-heading>
-          <s-stack direction="inline" gap="small-200" alignItems="center">
-            <s-text interestFor={tooltipId}>{value}</s-text>
-            {delta && (
-              <s-badge tone={badgeTone} icon={badgeIcon}>
-                {sign}
-                {delta}
-                {deltaSuffix} {deltaLabel}
-              </s-badge>
-            )}
-          </s-stack>
-        </s-grid>
-      </s-clickable>
-    </div>
+    <s-clickable
+      paddingBlock="small-400"
+      paddingInline="small-100"
+      borderRadius="base"
+      onClick={onFilter}
+    >
+      <s-tooltip id={tooltipId}>{description}</s-tooltip>
+      <s-grid gap="small-300">
+        <s-heading>{title}</s-heading>
+        <s-stack direction="inline" gap="small-200" alignItems="center">
+          <s-text interestFor={tooltipId}>{value}</s-text>
+          {delta && (
+            <s-badge tone={badgeTone} icon={badgeIcon}>
+              {sign}
+              {delta}
+              {deltaSuffix} {deltaLabel}
+            </s-badge>
+          )}
+        </s-stack>
+      </s-grid>
+    </s-clickable>
   );
 }
