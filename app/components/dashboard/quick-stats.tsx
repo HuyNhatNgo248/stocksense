@@ -121,6 +121,11 @@ function StatCard({
         <s-heading>{title}</s-heading>
         <s-stack direction="inline" gap="small-200" alignItems="center">
           <s-text interestFor={tooltipId}>{value}</s-text>
+
+          {delta === null && Number(value) > 0 && (
+            <s-icon tone="critical" type="alert-circle" />
+          )}
+
           {delta && (
             <s-badge tone={badgeTone} icon={badgeIcon}>
               {sign}

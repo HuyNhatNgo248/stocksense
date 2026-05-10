@@ -117,9 +117,6 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
                       >
                         <s-heading>{product.title}</s-heading>
                       </ProductVariantLink>
-                      <s-badge tone={isCritical ? "critical" : "caution"}>
-                        {isCritical ? "Critical" : "Reorder"}
-                      </s-badge>
                     </s-stack>
                     <s-text color="subdued">{product.sku}</s-text>
                   </s-stack>
