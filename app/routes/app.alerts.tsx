@@ -7,7 +7,7 @@ import { createApiClient } from "@/lib/api.server";
 import {
   AlertsList,
   AlertsListSkeleton,
-} from "@/components/dashboard/alerts-list";
+} from "@/components/alerts/alerts-list";
 
 export const PAGE_LIMIT = 10;
 

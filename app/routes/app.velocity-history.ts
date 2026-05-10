@@ -11,5 +11,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   });
 
   const { variantId } = await request.json();
-  return api.forecasts.velocityHistory(variantId);
+  const data = await api.forecasts.velocityHistory(variantId);
+  return Response.json(data);
 };

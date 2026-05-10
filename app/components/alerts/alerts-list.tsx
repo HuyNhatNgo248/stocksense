@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react";
 import { PAGE_LIMIT } from "@/routes/app.alerts";
 
+import { AreaChart, Area } from "recharts";
 import type {
   Forecast,
   ForecastListResponse,
   ForecastStatus,
+  VelocityHistory,
 } from "@/types/api";
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
@@ -69,20 +71,22 @@ function Metric({
   label,
   value,
   urgent,
-  displayAsChip,
+  displayAsBadge,
 }: {
   label: string;
   value: string;
   urgent?: boolean;
-  displayAsChip?: boolean;
+  displayAsBadge?: {
+    tone: TextTone;
+  };
 }) {
   const tone: TextTone | undefined = urgent ? "critical" : undefined;
 
   return (
     <s-stack gap="small-100">
       <s-heading>{label}</s-heading>
-      {displayAsChip ? (
-        <s-chip>{value}</s-chip>
+      {displayAsBadge ? (
+        <s-badge tone={displayAsBadge.tone}>{value}</s-badge>
       ) : (
         <s-text tone={tone}>{value}</s-text>
       )}
@@ -91,6 +95,26 @@ function Metric({
 }
 
 // ── Alert card ────────────────────────────────────────────────────────────────
+
+function useVelocityHistory(variantId: string) {
+  const [data, setData] = useState<VelocityHistory | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch("/app/velocity-history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ variantId }),
+    })
+      .then((r) => r.json())
+      .then((d: VelocityHistory) => setData(d))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [variantId]);
+
+  return { data, loading };
+}
 
 function useVariantImage(variantId: string) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -112,6 +136,9 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
   const { product } = forecast;
   const isCritical = forecast.status === "CRITICAL";
   const { imageUrl, loading: imageLoading } = useVariantImage(
+    product.shopifyVariantId,
+  );
+  const { data: velocityData, loading: velocityLoading } = useVelocityHistory(
     product.shopifyVariantId,
   );
   const daysLeft = Math.max(0, Math.floor(forecast.daysOfStockRemaining));
@@ -181,44 +208,87 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
             <s-text color="subdued">{summary}</s-text>
           </s-stack>
 
-          {/* Metrics */}
-          <s-stack direction="inline" gap="base">
-            <Metric
-              label="Current Stock"
-              value={`${product.currentStock} units`}
-              urgent={isCritical}
-            />
-            <s-divider direction="block" />
-            <Metric label="Safety Stock" value={`${safetyStock} units`} />
-            <s-divider direction="block" />
-            <Metric label="Reorder Pt." value={`${reorderPoint} units`} />
-            <s-divider direction="block" />
-            <Metric label="Lead Time" value={`${product.leadTimeDays}d`} />
-            <s-divider direction="block" />
-            <Metric
-              label="Velocity"
-              value={`${forecast.velocityPerDay.toFixed(2)}/day`}
-            />
-            <s-divider direction="block" />
-            <Metric
-              label="Stockout In"
-              value={daysLeft === 0 ? "Now" : `${daysLeft}d`}
-              urgent={daysLeft <= 3}
-            />
-            <s-divider direction="block" />
-            <Metric
-              label="Stock vs ROP"
-              value={`${stockVsRop}%`}
-              urgent={stockVsRop < 30}
-            />
-            <s-divider direction="block" />
-
-            <Metric
-              label="Suggest Order"
-              value={`${suggestedOrder} units`}
-              displayAsChip
-            />
-          </s-stack>
+          {/* Metrics + sparkline */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 overflow-x-auto min-w-0">
+              <s-stack direction="inline" gap="base">
+                <Metric
+                  label="Current Stock"
+                  value={`${product.currentStock} units`}
+                  urgent={isCritical}
+                />
+                <s-divider direction="block" />
+                <Metric label="Safety Stock" value={`${safetyStock} units`} />
+                <s-divider direction="block" />
+                <Metric label="Reorder Pt." value={`${reorderPoint} units`} />
+                <s-divider direction="block" />
+                <Metric label="Lead Time" value={`${product.leadTimeDays}d`} />
+                <s-divider direction="block" />
+                <Metric
+                  label="Velocity"
+                  value={`${forecast.velocityPerDay.toFixed(2)}/day`}
+                />
+                <s-divider direction="block" />
+                <Metric
+                  label="Stockout In"
+                  value={daysLeft === 0 ? "Now" : `${daysLeft}d`}
+                  urgent={daysLeft <= 3}
+                />
+                <s-divider direction="block" />
+                <Metric
+                  label="Stock vs ROP"
+                  value={`${stockVsRop}%`}
+                  urgent={stockVsRop < 30}
+                />
+                <s-divider direction="block" />
+                <Metric
+                  label="Suggest Order"
+                  value={`${suggestedOrder} units`}
+                  displayAsBadge={{ tone: "info" }}
+                />
+                <s-divider direction="block" />
+                {/* Sparkline — always visible, anchored right */}
+                <div className="shrink-0 flex flex-col items-center gap-0.5">
+                  <s-heading>Demand</s-heading>
+                  {velocityLoading || !velocityData ? (
+                    <div className="w-20 h-10 rounded animate-pulse bg-gray-200" />
+                  ) : (
+                    <AreaChart width={80} height={40} data={velocityData}>
+                      <defs>
+                        <linearGradient
+                          id={`spark-${forecast.id}`}
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="5%"
+                            stopColor="#eab308"
+                            stopOpacity={0.3}
+                          />
+                          <stop
+                            offset="95%"
+                            stopColor="#eab308"
+                            stopOpacity={0}
+                          />
+                        </linearGradient>
+                      </defs>
+                      <Area
+                        type="monotone"
+                        dataKey="ewmaVelocity"
+                        stroke="#eab308"
+                        strokeWidth={1.5}
+                        fill={`url(#spark-${forecast.id})`}
+                        dot={false}
+                        isAnimationActive={false}
+                      />
+                    </AreaChart>
+                  )}
+                </div>
+              </s-stack>
+            </div>
+          </div>
         </s-stack>
       </s-box>
     </div>
