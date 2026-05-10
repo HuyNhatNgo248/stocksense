@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
 import type { Forecast, VelocityHistory } from "@/lib/api.server";
 import { VelocityTrend } from "@/components/dashboard/velocity-trend";
+import {
+  DemandHistoryButton,
+  DemandHistoryModal,
+} from "@/components/demand-history";
 
 interface ProductDetailPanelProps {
   forecast: Forecast;
@@ -65,7 +69,11 @@ function PanelHeader({
           {loading ? (
             <div className="w-full h-full animate-pulse bg-gray-200" />
           ) : imageUrl ? (
-            <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
+            <img
+              src={imageUrl}
+              alt={title}
+              className="w-full h-full object-cover"
+            />
           ) : null}
         </div>
         <s-stack gap="small-400">
@@ -145,7 +153,6 @@ function ForecastFormula({
   );
 }
 
-
 function TrendSection({ variantId }: { variantId: string }) {
   const fetcher = useFetcher<VelocityHistory>();
 
@@ -178,7 +185,7 @@ function TrendSection({ variantId }: { variantId: string }) {
   );
 }
 
-function PanelActions() {
+function PanelActions({ modalId }: { modalId: string }) {
   return (
     <s-stack gap="small-300">
       <SectionLabel>Actions</SectionLabel>
@@ -188,9 +195,7 @@ function PanelActions() {
       <s-button variant="secondary" icon="info">
         Explain Calculation
       </s-button>
-      <s-button variant="secondary" icon="chart-stacked">
-        View Demand History
-      </s-button>
+      <DemandHistoryButton modalId={modalId} icon="chart-stacked" />
     </s-stack>
   );
 }
@@ -202,41 +207,49 @@ export function ProductDetailPanel({
   onClose,
 }: ProductDetailPanelProps) {
   const { product } = forecast;
+  const modalId = `panel-history-${product.id}`;
   const safetyStock = Math.round(forecast.safetyStock);
   const reorderPoint = Math.round(forecast.reorderPoint);
   const velocity = forecast.velocityPerDay.toFixed(2);
   const stddev = forecast.stddevDemand.toFixed(1);
 
   return (
-    <s-box background="base" borderRadius="base" padding="base">
-      <s-stack gap="base">
-        <PanelHeader
-          title={product.title}
-          sku={product.sku}
-          variantId={product.shopifyVariantId}
-          onClose={onClose}
-        />
-        <s-divider />
-        <StockMetrics
-          currentStock={product.currentStock}
-          safetyStock={safetyStock}
-          reorderPoint={reorderPoint}
-          leadTime={product.leadTimeDays}
-          velocity={velocity}
-        />
-        <s-divider />
-        <ForecastFormula
-          velocity={velocity}
-          stddev={stddev}
-          leadTime={product.leadTimeDays}
-          safetyStock={safetyStock}
-          reorderPoint={reorderPoint}
-        />
-        <s-divider />
-        <TrendSection variantId={product.shopifyVariantId} />
-        <s-divider />
-        <PanelActions />
-      </s-stack>
-    </s-box>
+    <>
+      <s-box background="base" borderRadius="base" padding="base">
+        <s-stack gap="base">
+          <PanelHeader
+            title={product.title}
+            sku={product.sku}
+            variantId={product.shopifyVariantId}
+            onClose={onClose}
+          />
+          <s-divider />
+          <StockMetrics
+            currentStock={product.currentStock}
+            safetyStock={safetyStock}
+            reorderPoint={reorderPoint}
+            leadTime={product.leadTimeDays}
+            velocity={velocity}
+          />
+          <s-divider />
+          <ForecastFormula
+            velocity={velocity}
+            stddev={stddev}
+            leadTime={product.leadTimeDays}
+            safetyStock={safetyStock}
+            reorderPoint={reorderPoint}
+          />
+          <s-divider />
+          <TrendSection variantId={product.shopifyVariantId} />
+          <s-divider />
+          <PanelActions modalId={modalId} />
+        </s-stack>
+      </s-box>
+      <DemandHistoryModal
+        modalId={modalId}
+        productTitle={product.title}
+        variantId={product.shopifyVariantId}
+      />
+    </>
   );
 }

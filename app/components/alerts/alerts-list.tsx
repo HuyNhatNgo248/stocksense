@@ -10,6 +10,10 @@ import type {
   ForecastStatus,
   VelocityHistory,
 } from "@/types/api";
+import {
+  DemandHistoryButton,
+  DemandHistoryModal,
+} from "@/components/demand-history";
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
@@ -133,6 +137,7 @@ function useVariantImage(variantId: string) {
 }
 
 function AlertCard({ forecast }: { forecast: Forecast }) {
+  const modalId = `history-modal-${forecast.id}`;
   const { product } = forecast;
   const isCritical = forecast.status === "CRITICAL";
   const { imageUrl, loading: imageLoading } = useVariantImage(
@@ -198,10 +203,7 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
                 </s-stack>
               </s-stack>
               <s-stack direction="inline" gap="small-200">
-                {/* <s-button variant="primary" icon="receipt">
-                Create PO
-              </s-button> */}
-                <s-button variant="secondary">Dismiss</s-button>
+                <DemandHistoryButton modalId={modalId} />
               </s-stack>
             </s-stack>
 
@@ -291,6 +293,14 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
           </div>
         </s-stack>
       </s-box>
+
+      <DemandHistoryModal
+        modalId={modalId}
+        productTitle={product.title}
+        variantId={product.shopifyVariantId}
+        data={velocityData}
+        loading={velocityLoading}
+      />
     </div>
   );
 }
