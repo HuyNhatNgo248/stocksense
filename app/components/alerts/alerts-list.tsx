@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PAGE_LIMIT } from "@/routes/app.alerts";
+import { Icon } from "@/components/icon";
 
 import type {
   Forecast,
@@ -64,7 +65,6 @@ export function AlertsListSkeleton() {
 function AlertCard({ forecast }: { forecast: Forecast }) {
   const modalId = `history-modal-${forecast.id}`;
   const { product } = forecast;
-  const isCritical = forecast.status === "CRITICAL";
   const { imageUrl, loading: imageLoading } = useVariantImage(
     product.shopifyVariantId,
   );
@@ -76,16 +76,9 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
   const suggestedOrder =
     Math.round(forecast.velocityPerDay * product.leadTimeDays) + safetyStock;
 
-  const borderColor = isCritical
-    ? "var(--s-color-icon-critical, #D72C0D)"
-    : "var(--s-color-icon-caution, #FFC453)";
-
   return (
-    <div
-      className="rounded-lg overflow-hidden border-l-6"
-      style={{ borderLeftColor: borderColor }}
-    >
-      <s-box background="base" borderRadius="base" padding="base">
+    <>
+      <s-box background="base" borderRadius="base" padding="large">
         <s-stack gap="large">
           {/* Content */}
           <s-stack gap="small-300">
@@ -132,37 +125,62 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
 
           {/* Metrics + sparkline */}
           <div className="flex items-center gap-3">
-            <div className="flex-1 overflow-x-auto min-w-0">
-              <s-stack direction="inline" gap="base">
+            <div className="flex-1 overflow-x-hidden min-w-0">
+              <s-grid
+                gridTemplateColumns="1fr auto 1fr auto 1fr auto 1fr"
+                gap="small"
+              >
                 <Metric
+                  icon={
+                    <Icon icon="Layers" className="text-red-500" size={18} />
+                  }
+                  classNames={{
+                    icon: "bg-red-100",
+                    value: "text-red-700",
+                  }}
                   label="Current Stock"
                   value={`${product.currentStock} units`}
-                  urgent={isCritical}
                 />
 
                 <s-divider direction="block" />
                 <Metric
+                  icon={
+                    <Icon icon="Clock" className="text-blue-500" size={18} />
+                  }
+                  classNames={{
+                    icon: "bg-blue-100",
+                    value: "text-blue-700",
+                  }}
                   label="Stockout In"
                   value={daysLeft === 0 ? "Now" : `${daysLeft}d`}
-                  urgent={daysLeft <= 3}
                 />
                 <s-divider direction="block" />
                 <Metric
+                  icon={
+                    <Icon
+                      icon="ShoppingCart"
+                      className="text-blue-700"
+                      size={18}
+                    />
+                  }
+                  classNames={{
+                    icon: "bg-blue-100",
+                    value: "text-blue-700",
+                  }}
                   label="Suggest Order"
                   value={`${suggestedOrder} units`}
-                  displayAsBadge={{ tone: "info" }}
                 />
                 <s-divider direction="block" />
                 {/* Sparkline — always visible, anchored right */}
                 <div className="shrink-0 flex flex-col gap-0.5">
-                  <s-heading>Demand</s-heading>
+                  <s-heading>Demand (Last 30 Days)</s-heading>
                   <DemandTrend
                     forecast={forecast}
                     velocityData={velocityData}
                     velocityLoading={velocityLoading}
                   />
                 </div>
-              </s-stack>
+              </s-grid>
             </div>
           </div>
         </s-stack>
@@ -175,7 +193,7 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
         data={velocityData}
         loading={velocityLoading}
       />
-    </div>
+    </>
   );
 }
 
