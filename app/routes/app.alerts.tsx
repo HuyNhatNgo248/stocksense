@@ -10,7 +10,7 @@ import {
   AlertsListSkeleton,
 } from "@/components/alerts/alerts-list";
 
-export const PAGE_LIMIT = 10;
+export const PAGE_LIMIT = 5;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
