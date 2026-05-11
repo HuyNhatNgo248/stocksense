@@ -50,7 +50,10 @@
       "unitsPerDay": "個/日",
       "forecastFormula": "予測式",
       "trend": "30日間のトレンド",
-      "actions": "アクション"
+      "actions": "アクション",
+      "updateLeadTime": "リードタイムを更新",
+      "leadTimeDaysLabel": "リードタイム（日）",
+      "leadTimeUpdated": "リードタイムを更新しました"
     }
   },
   "alerts": {
@@ -125,6 +128,8 @@
   },
   "common": {
     "explainCalculation": "計算を説明",
-    "demandHistory": "需要履歴"
+    "demandHistory": "需要履歴",
+    "cancel": "キャンセル",
+    "save": "保存"
   }
 }

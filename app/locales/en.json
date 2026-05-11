@@ -50,7 +50,10 @@
       "unitsPerDay": "units/day",
       "forecastFormula": "Forecast Formula",
       "trend": "30-Day Trend",
-      "actions": "Actions"
+      "actions": "Actions",
+      "updateLeadTime": "Update Lead Time",
+      "leadTimeDaysLabel": "Lead time (days)",
+      "leadTimeUpdated": "Lead time updated"
     }
   },
   "alerts": {
@@ -125,6 +128,8 @@
   },
   "common": {
     "explainCalculation": "Explain Calculation",
-    "demandHistory": "Demand History"
+    "demandHistory": "Demand History",
+    "cancel": "Cancel",
+    "save": "Save"
   }
 }

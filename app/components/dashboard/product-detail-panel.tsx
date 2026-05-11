@@ -1,7 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFetcher } from "react-router";
-import type { Forecast, VelocityHistory } from "@/lib/api.server";
+import type {
+  Forecast,
+  ForecastProduct,
+  VelocityHistory,
+} from "@/lib/api.server";
 import { VelocityTrend } from "@/components/dashboard/velocity-trend";
 import { useVariantImage } from "@/hooks/use-variant-image";
 import {
@@ -27,11 +31,22 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function MetricRow({ label, value }: { label: string; value: string }) {
+function MetricRow({
+  label,
+  value,
+  action,
+}: {
+  label: string;
+  value: string;
+  action?: React.ReactNode;
+}) {
   return (
     <div className="flex justify-between items-center">
       <s-text color="subdued">{label}</s-text>
-      <span className="text-sm font-semibold">{value}</span>
+      <div className="flex items-center gap-1">
+        <span className="text-sm font-semibold">{value}</span>
+        {action}
+      </div>
     </div>
   );
 }
@@ -93,22 +108,48 @@ function StockMetrics({
   reorderPoint,
   leadTime,
   velocity,
+  leadTimeModalId,
 }: {
   currentStock: number;
   safetyStock: number;
   reorderPoint: number;
   leadTime: number;
   velocity: string;
+  leadTimeModalId: string;
 }) {
   const { t } = useTranslation();
   return (
     <s-stack gap="small-300">
       <SectionLabel>{t("dashboard.panel.stockMetrics")}</SectionLabel>
-      <MetricRow label={t("dashboard.panel.currentStock")} value={t("alerts.card.units", { n: currentStock })} />
-      <MetricRow label={t("dashboard.panel.safetyStock")} value={t("alerts.card.units", { n: safetyStock })} />
-      <MetricRow label={t("dashboard.panel.reorderPoint")} value={t("alerts.card.units", { n: reorderPoint })} />
-      <MetricRow label={t("dashboard.panel.leadTime")} value={t("alerts.card.days", { n: leadTime })} />
-      <MetricRow label={t("dashboard.panel.avgVelocity")} value={`${velocity} ${t("dashboard.panel.unitsPerDay")}`} />
+      <MetricRow
+        label={t("dashboard.panel.currentStock")}
+        value={t("alerts.card.units", { n: currentStock })}
+      />
+      <MetricRow
+        label={t("dashboard.panel.safetyStock")}
+        value={t("alerts.card.units", { n: safetyStock })}
+      />
+      <MetricRow
+        label={t("dashboard.panel.reorderPoint")}
+        value={t("alerts.card.units", { n: reorderPoint })}
+      />
+      <MetricRow
+        label={t("dashboard.panel.leadTime")}
+        value={t("alerts.card.days", { n: leadTime })}
+        action={
+          <s-button
+            variant="tertiary"
+            icon="edit"
+            accessibilityLabel={t("dashboard.panel.updateLeadTime")}
+            commandFor={leadTimeModalId}
+            command="--show"
+          />
+        }
+      />
+      <MetricRow
+        label={t("dashboard.panel.avgVelocity")}
+        value={`${velocity} ${t("dashboard.panel.unitsPerDay")}`}
+      />
     </s-stack>
   );
 }
@@ -199,6 +240,111 @@ function PanelActions({ modalId }: { modalId: string }) {
   );
 }
 
+function LeadTimeModal({
+  modalId,
+  variantId,
+  currentLeadTime,
+  onSuccess,
+}: {
+  modalId: string;
+  variantId: string;
+  currentLeadTime: number;
+  onSuccess: (newLeadTime: number) => void;
+}) {
+  const { t } = useTranslation();
+  const fetcher = useFetcher<ForecastProduct>();
+  const saveRef = useRef<HTMLElement>(null);
+  const cancelRef = useRef<HTMLElement>(null);
+  // useRef so the native event listener always reads the latest value
+  const valueRef = useRef(String(currentLeadTime));
+  const [value, setValue] = useState(String(currentLeadTime));
+
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+
+  useEffect(() => {
+    setValue(String(currentLeadTime));
+    valueRef.current = String(currentLeadTime);
+  }, [currentLeadTime]);
+
+  // Native listener — s-modal renders outside the React root so synthetic
+  // onClick on s-button children doesn't fire.
+  useEffect(() => {
+    const el = saveRef.current;
+    if (!el) return;
+    const handler = () => {
+      const days = Number(valueRef.current);
+      if (!days || days < 1) return;
+      fetcher.submit(
+        { variantId, leadTimeDays: days },
+        {
+          method: "post",
+          action: "/app/update-lead-time",
+          encType: "application/json",
+        },
+      );
+    };
+    el.addEventListener("click", handler);
+    return () => el.removeEventListener("click", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [variantId]);
+
+  useEffect(() => {
+    if (fetcher.state === "idle" && fetcher.data?.leadTimeDays !== undefined) {
+      onSuccess(fetcher.data.leadTimeDays);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (cancelRef.current as any)?.click();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).shopify?.toast.show(
+        t("dashboard.panel.leadTimeUpdated"),
+        { duration: 3000 },
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.state, fetcher.data]);
+
+  return (
+    <s-modal
+      id={modalId}
+      heading={t("dashboard.panel.updateLeadTime")}
+      accessibilityLabel={t("dashboard.panel.updateLeadTime")}
+    >
+      <s-stack gap="base">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-gray-700">
+            {t("dashboard.panel.leadTimeDaysLabel")}
+          </label>
+          <input
+            type="number"
+            min={1}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <s-button
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ref={saveRef as any}
+          variant="primary"
+          loading={fetcher.state !== "idle" ? true : undefined}
+        >
+          {t("common.save")}
+        </s-button>
+      </s-stack>
+      <s-button
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ref={cancelRef as any}
+        slot={"secondary-actions" as Lowercase<string>}
+        commandFor={modalId}
+        command="--hide"
+      >
+        {t("common.cancel")}
+      </s-button>
+    </s-modal>
+  );
+}
+
 // ── Panel ─────────────────────────────────────────────────────────────────────
 
 export function ProductDetailPanel({
@@ -207,10 +353,16 @@ export function ProductDetailPanel({
 }: ProductDetailPanelProps) {
   const { product } = forecast;
   const modalId = `panel-history-${product.id}`;
+  const leadTimeModalId = `lead-time-modal-${product.id}`;
   const safetyStock = Math.round(forecast.safetyStock);
   const reorderPoint = Math.round(forecast.reorderPoint);
   const velocity = forecast.velocityPerDay.toFixed(2);
   const stddev = forecast.stddevDemand.toFixed(1);
+  const [leadTimeDays, setLeadTimeDays] = useState(product.leadTimeDays);
+
+  useEffect(() => {
+    setLeadTimeDays(product.leadTimeDays);
+  }, [product.leadTimeDays]);
 
   return (
     <>
@@ -229,8 +381,9 @@ export function ProductDetailPanel({
             currentStock={product.currentStock}
             safetyStock={safetyStock}
             reorderPoint={reorderPoint}
-            leadTime={product.leadTimeDays}
+            leadTime={leadTimeDays}
             velocity={velocity}
+            leadTimeModalId={leadTimeModalId}
           />
           <s-divider />
           <TrendSection variantId={product.shopifyVariantId} />
@@ -238,7 +391,7 @@ export function ProductDetailPanel({
           <ForecastFormula
             velocity={velocity}
             stddev={stddev}
-            leadTime={product.leadTimeDays}
+            leadTime={leadTimeDays}
             safetyStock={safetyStock}
             reorderPoint={reorderPoint}
           />
@@ -250,6 +403,12 @@ export function ProductDetailPanel({
         modalId={modalId}
         productTitle={product.title}
         variantId={product.shopifyVariantId}
+      />
+      <LeadTimeModal
+        modalId={leadTimeModalId}
+        variantId={product.shopifyVariantId}
+        currentLeadTime={leadTimeDays}
+        onSuccess={setLeadTimeDays}
       />
     </>
   );

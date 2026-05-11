@@ -2,6 +2,7 @@ import type {
   AppSettings,
   ForecastListResponse,
   ForecastMetrics,
+  ForecastProduct,
   VelocityHistory,
 } from "@/types/api";
 
@@ -35,7 +36,21 @@ function createApiClient({ shop, accessToken }: ApiClientOptions) {
     return res.json() as Promise<T>;
   }
 
+  async function patch<T>(path: string, body: unknown): Promise<T> {
+    const res = await fetch(`${BASE_URL}${path}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`API error ${res.status}: ${path}`);
+    return res.json() as Promise<T>;
+  }
+
   return {
+    inventory: {
+      updateSettings: (variantId: string, data: { leadTimeDays: number }) =>
+        patch<ForecastProduct>(`/api/inventory/${variantId}/settings`, data),
+    },
     settings: {
       get: () => get<AppSettings>("/api/settings"),
       update: (
