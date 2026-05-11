@@ -205,10 +205,6 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
               {t("alerts.card.days", { n: product.leadTimeDays })}
             </strong>
           </span>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-            <Icon icon="ShoppingCart" size={14} />
-            {t("alerts.card.placeOrder", { n: suggestedOrder })}
-          </button>
         </div>
       </div>
 

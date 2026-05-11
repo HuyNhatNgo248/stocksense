@@ -79,7 +79,6 @@
       "leadTime": "リードタイム",
       "units": "{{n}}個",
       "days": "{{n}}日",
-      "placeOrder": "発注する・{{n}}個",
       "viewDemandHistory": "需要履歴を見る",
       "now": "今すぐ"
     },

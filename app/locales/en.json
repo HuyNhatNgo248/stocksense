@@ -79,7 +79,6 @@
       "leadTime": "Lead time",
       "units": "{{n}} units",
       "days": "{{n}} days",
-      "placeOrder": "Place order · {{n}} units",
       "viewDemandHistory": "View Demand History",
       "now": "Now"
     },
