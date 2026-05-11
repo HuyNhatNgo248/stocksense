@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { PAGE_LIMIT } from "@/routes/app.alerts";
 import { Icon } from "@/components/icon";
 import { cn } from "@/lib/cn";
@@ -68,6 +69,7 @@ export function AlertsListSkeleton() {
 }
 
 function AlertCard({ forecast }: { forecast: Forecast }) {
+  const { t } = useTranslation();
   const modalId = `history-modal-${forecast.id}`;
   const { product } = forecast;
   const isCritical = forecast.status === "CRITICAL";
@@ -140,7 +142,9 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
                   isCritical ? "bg-red-500" : "bg-amber-500",
                 )}
               />
-              {isCritical ? "Out of stock" : "Reorder soon"}
+              {isCritical
+                ? t("alerts.card.outOfStock")
+                : t("alerts.card.reorderSoon")}
             </span>
             <DemandHistoryButton modalId={modalId} />
           </div>
@@ -151,27 +155,33 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
         {/* Metrics */}
         <div className="grid grid-cols-4 gap-6 p-4">
           <Metric
-            label="Current Stock"
-            value={`${product.currentStock} units`}
+            label={t("alerts.card.currentStock")}
+            value={t("alerts.card.units", { n: product.currentStock })}
             valueClass={urgentClass}
           />
           <Metric
-            label="Stockout"
-            value={daysLeft === 0 ? "Now" : `${daysLeft}d`}
+            label={t("alerts.card.stockout")}
+            value={
+              daysLeft === 0
+                ? t("alerts.card.now")
+                : t("alerts.card.days", { n: daysLeft })
+            }
             valueClass={urgentClass}
-            subtext={`${daysLeft} days remaining`}
+            subtext={t("alerts.card.daysRemaining", { days: daysLeft })}
           />
           <Metric
-            label="Suggested Order"
-            value={`${suggestedOrder} units`}
+            label={t("alerts.card.suggestedOrder")}
+            value={t("alerts.card.units", { n: suggestedOrder })}
             valueClass="text-blue-600"
             subtext={
-              coverageDays > 0 ? `~${coverageDays} days coverage` : undefined
+              coverageDays > 0
+                ? t("alerts.card.daysCoverage", { days: coverageDays })
+                : undefined
             }
           />
           <div className="flex flex-col gap-1">
             <span className="text-[10px] font-bold tracking-widest uppercase text-gray-400">
-              Demand · 30 Days
+              {t("alerts.card.demand30Days")}
             </span>
             <DemandTrend
               forecast={forecast}
@@ -186,18 +196,18 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
         {/* Footer */}
         <div className="flex items-center justify-between px-4 py-3">
           <span className="text-sm text-gray-500">
-            Reorder point:{" "}
+            {t("alerts.card.reorderPoint")}:{" "}
             <strong className="text-gray-700 font-semibold">
-              {Math.round(forecast.reorderPoint)} units
+              {t("alerts.card.units", { n: Math.round(forecast.reorderPoint) })}
             </strong>{" "}
-            · Lead time:{" "}
+            · {t("alerts.card.leadTime")}:{" "}
             <strong className="text-gray-700 font-semibold">
-              {product.leadTimeDays} days
+              {t("alerts.card.days", { n: product.leadTimeDays })}
             </strong>
           </span>
           <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
             <Icon icon="ShoppingCart" size={14} />
-            Place order · {suggestedOrder} units
+            {t("alerts.card.placeOrder", { n: suggestedOrder })}
           </button>
         </div>
       </div>
@@ -228,6 +238,7 @@ function AlertSection({
   initial: ForecastListResponse;
   emptyMessage: string;
 }) {
+  const { t } = useTranslation();
   const [forecasts, setForecasts] = useState<Forecast[]>(initial.data);
   const [currentPage, setCurrentPage] = useState(initial.page);
   const [totalPages, setTotalPages] = useState(initial.totalPages);
@@ -266,7 +277,7 @@ function AlertSection({
               : "bg-amber-100 text-amber-700",
           )}
         >
-          {total} items
+          {t("alerts.items", { n: total })}
         </span>
       </div>
 
@@ -286,7 +297,7 @@ function AlertSection({
                 onClick={loadMore}
                 loading={loading ? true : undefined}
               >
-                Load more ({forecasts.length} of {total})
+                {t("alerts.loadMore", { shown: forecasts.length, total })}
               </s-button>
             </div>
           )}
@@ -306,6 +317,7 @@ interface AlertsListProps {
 }
 
 export function AlertsList({ critical, reorder }: AlertsListProps) {
+  const { t } = useTranslation();
   const [filter, setFilter] = useState<FilterValue>("all");
   const total = critical.total + reorder.total;
 
@@ -315,7 +327,7 @@ export function AlertsList({ critical, reorder }: AlertsListProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-lg font-semibold text-gray-900">
-            Inventory alerts
+            {t("alerts.inventoryAlerts")}
           </span>
           <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
             {total}
@@ -327,39 +339,39 @@ export function AlertsList({ critical, reorder }: AlertsListProps) {
             variant={filter === "all" ? "secondary" : "tertiary"}
             onClick={() => setFilter("all")}
           >
-            All
+            {t("alerts.filters.all")}
           </s-button>
           <s-button
             variant={filter === "critical" ? "secondary" : "tertiary"}
             onClick={() => setFilter("critical")}
           >
-            Critical
+            {t("alerts.filters.critical")}
           </s-button>
           <s-button
             variant={filter === "reorder" ? "secondary" : "tertiary"}
             onClick={() => setFilter("reorder")}
           >
-            Reorder
+            {t("alerts.filters.reorder")}
           </s-button>
         </s-stack>
       </div>
 
       {filter !== "reorder" && (
         <AlertSection
-          title="Critical — Immediate Action Required"
+          title={t("alerts.criticalSection")}
           tone="critical"
           status="CRITICAL"
           initial={critical}
-          emptyMessage="No critical stock alerts right now."
+          emptyMessage={t("alerts.noCritical")}
         />
       )}
       {filter !== "critical" && (
         <AlertSection
-          title="Reorder Soon"
+          title={t("alerts.reorderSection")}
           tone="caution"
           status="REORDER"
           initial={reorder}
-          emptyMessage="No products approaching reorder threshold."
+          emptyMessage={t("alerts.noReorder")}
         />
       )}
     </div>

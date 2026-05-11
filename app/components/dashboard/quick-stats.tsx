@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { ForecastMetrics } from "@/lib/api.server";
 import type { StatusFilter } from "@/components/dashboard/inventory-table";
 
@@ -32,6 +33,7 @@ interface QuickStatsProps {
 }
 
 export function QuickStats({ metrics, onFilterChange }: QuickStatsProps) {
+  const { t } = useTranslation();
   return (
     <div className="overflow-x-auto w-full">
       <s-grid
@@ -40,39 +42,39 @@ export function QuickStats({ metrics, onFilterChange }: QuickStatsProps) {
         minInlineSize="700px"
       >
         <StatCard
-          title="Critical"
-          description="SKUs at or below safety stock with active stockout risk"
+          title={t("dashboard.quickStats.critical")}
+          description={t("dashboard.quickStats.criticalDesc")}
           value={String(metrics.critical)}
           delta={metrics.delta.criticalSinceYesterday}
-          deltaLabel="since yesterday"
+          deltaLabel={t("dashboard.quickStats.sinceYesterday")}
           invertDelta
           onFilter={() => onFilterChange?.("Critical")}
         />
         <s-divider direction="block" />
         <StatCard
-          title="Reorder Soon"
-          description="SKUs between safety stock and reorder point that need a PO placed now"
+          title={t("dashboard.quickStats.reorderSoon")}
+          description={t("dashboard.quickStats.reorderDesc")}
           value={String(metrics.reorder)}
           delta={metrics.delta.reorderSinceLastWeek}
-          deltaLabel="this week"
+          deltaLabel={t("dashboard.quickStats.thisWeek")}
           invertDelta
           onFilter={() => onFilterChange?.("Reorder")}
         />
         <s-divider direction="block" />
         <StatCard
-          title="Total SKUs"
-          description="Total number of products being tracked and forecasted"
+          title={t("dashboard.quickStats.totalSkus")}
+          description={t("dashboard.quickStats.totalSkusDesc")}
           value={String(metrics.total)}
           delta={metrics.delta.skusAddedThisMonth}
-          deltaLabel="this month"
+          deltaLabel={t("dashboard.quickStats.thisMonth")}
         />
         <s-divider direction="block" />
         <StatCard
-          title="Forecast Accuracy"
-          description="How closely EWMA velocity predictions match actual daily sales"
+          title={t("dashboard.quickStats.forecastAccuracy")}
+          description={t("dashboard.quickStats.forecastAccuracyDesc")}
           value={`${metrics.forecastAccuracy.toFixed(2)}%`}
           delta={metrics.delta.accuracyVsLastMonth}
-          deltaLabel="vs last month"
+          deltaLabel={t("dashboard.quickStats.vsLastMonth")}
           deltaSuffix="%"
         />
       </s-grid>

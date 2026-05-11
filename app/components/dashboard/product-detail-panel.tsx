@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useFetcher } from "react-router";
 import type { Forecast, VelocityHistory } from "@/lib/api.server";
 import { VelocityTrend } from "@/components/dashboard/velocity-trend";
@@ -99,14 +100,15 @@ function StockMetrics({
   leadTime: number;
   velocity: string;
 }) {
+  const { t } = useTranslation();
   return (
     <s-stack gap="small-300">
-      <SectionLabel>Stock Metrics</SectionLabel>
-      <MetricRow label="Current stock" value={`${currentStock} units`} />
-      <MetricRow label="Safety stock" value={`${safetyStock} units`} />
-      <MetricRow label="Reorder point" value={`${reorderPoint} units`} />
-      <MetricRow label="Lead time" value={`${leadTime} days`} />
-      <MetricRow label="Avg velocity" value={`${velocity} units/day`} />
+      <SectionLabel>{t("dashboard.panel.stockMetrics")}</SectionLabel>
+      <MetricRow label={t("dashboard.panel.currentStock")} value={t("alerts.card.units", { n: currentStock })} />
+      <MetricRow label={t("dashboard.panel.safetyStock")} value={t("alerts.card.units", { n: safetyStock })} />
+      <MetricRow label={t("dashboard.panel.reorderPoint")} value={t("alerts.card.units", { n: reorderPoint })} />
+      <MetricRow label={t("dashboard.panel.leadTime")} value={t("alerts.card.days", { n: leadTime })} />
+      <MetricRow label={t("dashboard.panel.avgVelocity")} value={`${velocity} ${t("dashboard.panel.unitsPerDay")}`} />
     </s-stack>
   );
 }
@@ -124,9 +126,10 @@ function ForecastFormula({
   safetyStock: number;
   reorderPoint: number;
 }) {
+  const { t } = useTranslation();
   return (
     <s-stack gap="small-300">
-      <SectionLabel>Forecast Formula</SectionLabel>
+      <SectionLabel>{t("dashboard.panel.forecastFormula")}</SectionLabel>
       <div
         className="rounded-lg p-3 text-xs leading-relaxed font-mono"
         style={{
@@ -149,6 +152,7 @@ function ForecastFormula({
 }
 
 function TrendSection({ variantId }: { variantId: string }) {
+  const { t } = useTranslation();
   const fetcher = useFetcher<VelocityHistory>();
 
   useEffect(() => {
@@ -165,7 +169,7 @@ function TrendSection({ variantId }: { variantId: string }) {
 
   return (
     <s-stack gap="small-300">
-      <SectionLabel>30-Day Trend</SectionLabel>
+      <SectionLabel>{t("dashboard.panel.trend")}</SectionLabel>
       <div
         className="rounded-lg p-2"
         style={{ background: "var(--s-color-bg-surface-secondary, #f6f6f7)" }}
@@ -181,12 +185,13 @@ function TrendSection({ variantId }: { variantId: string }) {
 }
 
 function PanelActions({ modalId }: { modalId: string }) {
+  const { t } = useTranslation();
   return (
     <s-stack gap="small-300">
-      <SectionLabel>Actions</SectionLabel>
+      <SectionLabel>{t("dashboard.panel.actions")}</SectionLabel>
       <s-link href="/app/how-it-works">
         <s-button variant="secondary" icon="info">
-          Explain Calculation
+          {t("common.explainCalculation")}
         </s-button>
       </s-link>
       <DemandHistoryButton modalId={modalId} />

@@ -1,0 +1,130 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "alerts": "Alerts",
+    "howItWorks": "How It Works",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "inventoryStatus": "Inventory Status",
+    "searchPlaceholder": "Search SKU or product...",
+    "showing": "Showing {{from}}–{{to}} of {{total}} records",
+    "page": "Page {{current}} of {{total}}",
+    "columns": {
+      "product": "Product",
+      "sku": "SKU",
+      "status": "Status",
+      "stock": "Stock",
+      "reorderPoint": "Reorder Point",
+      "safetyStock": "Safety Stock",
+      "velocityDay": "Velocity/Day"
+    },
+    "filters": {
+      "all": "All",
+      "critical": "Critical",
+      "reorder": "Reorder",
+      "ok": "OK"
+    },
+    "quickStats": {
+      "critical": "Critical",
+      "criticalDesc": "SKUs at or below safety stock with active stockout risk",
+      "sinceYesterday": "since yesterday",
+      "reorderSoon": "Reorder Soon",
+      "reorderDesc": "SKUs between safety stock and reorder point that need a PO placed now",
+      "thisWeek": "this week",
+      "totalSkus": "Total SKUs",
+      "totalSkusDesc": "Total number of products being tracked and forecasted",
+      "thisMonth": "this month",
+      "forecastAccuracy": "Forecast Accuracy",
+      "forecastAccuracyDesc": "How closely EWMA velocity predictions match actual daily sales",
+      "vsLastMonth": "vs last month"
+    },
+    "panel": {
+      "stockMetrics": "Stock Metrics",
+      "currentStock": "Current stock",
+      "safetyStock": "Safety stock",
+      "reorderPoint": "Reorder point",
+      "leadTime": "Lead time",
+      "avgVelocity": "Avg velocity",
+      "unitsPerDay": "units/day",
+      "forecastFormula": "Forecast Formula",
+      "trend": "30-Day Trend",
+      "actions": "Actions"
+    }
+  },
+  "alerts": {
+    "title": "Alerts",
+    "inventoryAlerts": "Inventory alerts",
+    "criticalSection": "Critical — Immediate Action Required",
+    "reorderSection": "Reorder Soon",
+    "noCritical": "No critical stock alerts right now.",
+    "noReorder": "No products approaching reorder threshold.",
+    "loadMore": "Load more ({{shown}} of {{total}})",
+    "filters": {
+      "all": "All",
+      "critical": "Critical",
+      "reorder": "Reorder"
+    },
+    "card": {
+      "outOfStock": "Out of stock",
+      "reorderSoon": "Reorder soon",
+      "currentStock": "Current Stock",
+      "stockout": "Stockout",
+      "suggestedOrder": "Suggested Order",
+      "demand30Days": "Demand · 30 Days",
+      "daysRemaining": "{{days}} days remaining",
+      "daysCoverage": "~{{days}} days coverage",
+      "reorderPoint": "Reorder point",
+      "leadTime": "Lead time",
+      "units": "{{n}} units",
+      "days": "{{n}} days",
+      "placeOrder": "Place order · {{n}} units",
+      "viewDemandHistory": "View Demand History",
+      "now": "Now"
+    },
+    "items": "{{n}} items"
+  },
+  "settings": {
+    "title": "Configuration",
+    "subtitle": "Model parameters and sync settings",
+    "reorderPlan": "Reorder Plan",
+    "sync": "Sync",
+    "forecastParameters": "Forecast Parameters",
+    "ewmaAlpha": "EWMA Alpha (α)",
+    "serviceLevel": "Service Level (Z-score)",
+    "defaultLeadTime": "Default Lead Time (days)",
+    "syncFrequency": "Sync Frequency",
+    "syncOptions": {
+      "1h": "Every hour",
+      "6h": "Every 6 hours",
+      "12h": "Every 12 hours",
+      "24h": "Every 24 hours"
+    },
+    "save": "Save Configuration",
+    "saved": "Configuration saved.",
+    "language": "Language",
+    "languages": {
+      "en": "English",
+      "ja": "日本語"
+    }
+  },
+  "howItWorks": {
+    "title": "How StockSense Works",
+    "subtitle": "StockSense uses statistical forecasting to predict when you'll run out of stock and how much buffer to keep. Here's every calculation behind the numbers you see.",
+    "constants": "Constants",
+    "quickReference": "Quick Reference",
+    "sections": {
+      "velocity": "1. Sales Velocity (EWMA)",
+      "variability": "2. Demand Variability (σ)",
+      "safetyStock": "3. Safety Stock",
+      "cycleStock": "4. Cycle Stock",
+      "rop": "5. Reorder Point (ROP)",
+      "status": "6. Status Classification"
+    }
+  },
+  "common": {
+    "explainCalculation": "Explain Calculation",
+    "demandHistory": "Demand History"
+  }
+}

@@ -1,19 +1,18 @@
+import { useTranslation } from "react-i18next";
+
 export default function HowItWorks() {
+  const { t } = useTranslation();
   return (
     <s-box padding="large">
       <s-stack gap="large">
         {/* Page header */}
         <s-stack gap="small-300">
-          <s-heading variant="headingXl">How StockSense Works</s-heading>
-          <s-text color="subdued">
-            StockSense uses statistical forecasting to predict when you'll run
-            out of stock and how much buffer to keep. Here's every calculation
-            behind the numbers you see.
-          </s-text>
+          <s-heading variant="headingXl">{t("howItWorks.title")}</s-heading>
+          <s-text color="subdued">{t("howItWorks.subtitle")}</s-text>
         </s-stack>
 
         {/* Constants */}
-        <Section title="Constants">
+        <Section title={t("howItWorks.constants")}>
           <s-text color="subdued">
             Two constants drive every calculation. They're fixed unless you
             change your target service level.
@@ -48,7 +47,7 @@ export default function HowItWorks() {
         </Section>
 
         {/* 1. Sales Velocity */}
-        <Section title="1. Sales Velocity (EWMA)" badge="units / day">
+        <Section title={t("howItWorks.sections.velocity")} badge="units / day">
           <s-text>
             The current estimated daily sales rate for a SKU, weighted toward
             recent data. Older sales matter less — a spike from 3 weeks ago
@@ -71,7 +70,7 @@ export default function HowItWorks() {
         </Section>
 
         {/* 2. Demand Variability */}
-        <Section title="2. Demand Variability (σ)" badge="units / day">
+        <Section title={t("howItWorks.sections.variability")} badge="units / day">
           <s-text>
             How erratic daily demand is for a SKU. High σ means unpredictable
             sales — you need more buffer stock to stay safe.
@@ -92,7 +91,7 @@ export default function HowItWorks() {
         </Section>
 
         {/* 3. Safety Stock */}
-        <Section title="3. Safety Stock" badge="units">
+        <Section title={t("howItWorks.sections.safetyStock")} badge="units">
           <s-text>
             Buffer inventory held to absorb demand spikes or supplier delays
             during the replenishment lead time. This is the floor — dropping
@@ -139,7 +138,7 @@ export default function HowItWorks() {
         </Section>
 
         {/* 4. Cycle Stock */}
-        <Section title="4. Cycle Stock" badge="units">
+        <Section title={t("howItWorks.sections.cycleStock")} badge="units">
           <s-text>
             Inventory needed to cover expected (average) demand during the lead
             time — before accounting for any uncertainty. Pure deterministic
@@ -160,7 +159,7 @@ export default function HowItWorks() {
         </Section>
 
         {/* 5. Reorder Point */}
-        <Section title="5. Reorder Point (ROP)" badge="units">
+        <Section title={t("howItWorks.sections.rop")} badge="units">
           <s-text>
             The inventory level at which a purchase order must be placed.
             When stock drops to or below this number, order immediately.
@@ -180,7 +179,7 @@ export default function HowItWorks() {
         </Section>
 
         {/* 6. Status Classification */}
-        <Section title="6. Status Classification">
+        <Section title={t("howItWorks.sections.status")}>
           <s-text>
             Every SKU is assigned one of three statuses based on where current
             stock sits relative to safety stock and ROP. Evaluated in order.
@@ -235,7 +234,7 @@ export default function HowItWorks() {
         </Section>
 
         {/* Quick reference */}
-        <Section title="Quick Reference">
+        <Section title={t("howItWorks.quickReference")}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>

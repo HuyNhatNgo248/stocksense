@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { useTranslation } from "react-i18next";
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData } from "react-router";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
@@ -36,9 +37,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function AlertsPage() {
   const { critical, reorder } = useLoaderData<typeof loader>();
+  const { t } = useTranslation();
 
   return (
-    <s-page heading="Alerts">
+    <s-page heading={t("alerts.title")}>
       <Suspense fallback={<AlertsListSkeleton />}>
         <Await resolve={Promise.all([critical, reorder])}>
           {([c, r]) => <AlertsList critical={c} reorder={r} />}

@@ -1,4 +1,5 @@
 import { Suspense, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import type {
   HeadersFunction,
@@ -38,13 +39,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function Index() {
   const { metrics, inventory } = useLoaderData<typeof loader>();
+  const { t } = useTranslation();
   const [selectedForecast, setSelectedForecast] = useState<Forecast | null>(
     null,
   );
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("All");
 
   return (
-    <s-page heading="Dashboard" inlineSize="large">
+    <s-page heading={t("dashboard.title")} inlineSize="large">
       <div className="flex gap-4 items-start">
         {/* Main content */}
         <div className="flex-1 min-w-0 transition-all duration-300">

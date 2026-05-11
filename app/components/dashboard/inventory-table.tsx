@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useFetcher } from "react-router";
 import type {
   Forecast,
@@ -95,12 +96,20 @@ export function InventoryTableSkeleton() {
   );
 }
 
+const FILTER_KEY: Record<StatusFilter, string> = {
+  All: "dashboard.filters.all",
+  Critical: "dashboard.filters.critical",
+  Reorder: "dashboard.filters.reorder",
+  OK: "dashboard.filters.ok",
+};
+
 export function InventoryTable({
   inventory,
   onRowClick,
   externalFilter,
   onFilterChange,
 }: InventoryTableProps) {
+  const { t } = useTranslation();
   const fetcher = useFetcher<ForecastListResponse>();
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("All");
   const [search, setSearch] = useState("");
@@ -160,7 +169,7 @@ export function InventoryTable({
       <s-stack gap="base">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <s-stack direction="inline" gap="base" alignItems="center">
-            <s-heading>Inventory Status</s-heading>
+            <s-heading>{t("dashboard.inventoryStatus")}</s-heading>
             <s-stack direction="inline" gap="small-400">
               {STATUS_FILTERS.map((f) => (
                 <s-button
@@ -168,7 +177,7 @@ export function InventoryTable({
                   variant={activeFilter === f ? "secondary" : "tertiary"}
                   onClick={() => setFilter(f)}
                 >
-                  {f}
+                  {t(FILTER_KEY[f])}
                 </s-button>
               ))}
             </s-stack>
@@ -178,7 +187,7 @@ export function InventoryTable({
             <s-search-field
               label="Search"
               labelAccessibilityVisibility="exclusive"
-              placeholder="Search SKU or product..."
+              placeholder={t("dashboard.searchPlaceholder")}
               value={search}
               onInput={(e: Event) =>
                 setSearch((e.target as HTMLInputElement).value)
@@ -192,13 +201,13 @@ export function InventoryTable({
         >
           <s-table>
             <s-table-header-row>
-              <s-table-header listSlot="primary">Product</s-table-header>
-              <s-table-header>SKU</s-table-header>
-              <s-table-header>Status</s-table-header>
-              <s-table-header format="numeric">Stock</s-table-header>
-              <s-table-header format="numeric">Reorder Point</s-table-header>
-              <s-table-header format="numeric">Safety Stock</s-table-header>
-              <s-table-header format="numeric">Velocity/Day</s-table-header>
+              <s-table-header listSlot="primary">{t("dashboard.columns.product")}</s-table-header>
+              <s-table-header>{t("dashboard.columns.sku")}</s-table-header>
+              <s-table-header>{t("dashboard.columns.status")}</s-table-header>
+              <s-table-header format="numeric">{t("dashboard.columns.stock")}</s-table-header>
+              <s-table-header format="numeric">{t("dashboard.columns.reorderPoint")}</s-table-header>
+              <s-table-header format="numeric">{t("dashboard.columns.safetyStock")}</s-table-header>
+              <s-table-header format="numeric">{t("dashboard.columns.velocityDay")}</s-table-header>
             </s-table-header-row>
 
             <s-table-body>
@@ -220,7 +229,7 @@ export function InventoryTable({
             justifyContent="space-between"
           >
             <s-text color="subdued">
-              Showing {from}–{to} of {total} records
+              {t("dashboard.showing", { from, to, total })}
             </s-text>
             <s-stack direction="inline" alignItems="center" gap="small-200">
               <s-button
@@ -231,7 +240,7 @@ export function InventoryTable({
                 onClick={() => goToPage(currentPage - 1)}
               />
               <s-text color="subdued">
-                Page {currentPage} of {totalPages}
+                {t("dashboard.page", { current: currentPage, total: totalPages })}
               </s-text>
               <s-button
                 variant="tertiary"

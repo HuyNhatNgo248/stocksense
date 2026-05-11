@@ -1,5 +1,6 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 import "./app.css";
+import "./i18n";
 
 export default function App() {
   return (

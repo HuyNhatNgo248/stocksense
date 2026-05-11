@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { ActionFunctionArgs, HeadersFunction } from "react-router";
 import { Form, useActionData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
+import { setLanguage } from "@/i18n";
 
 const Z_LEVELS = [
   { z: 1.282, label: "90%" },
@@ -21,6 +23,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function Settings() {
+  const { t, i18n } = useTranslation();
   const actionData = useActionData<typeof action>();
   const [alpha, setAlpha] = useState(0.3);
   const [zIndex, setZIndex] = useState(1);
@@ -28,14 +31,14 @@ export default function Settings() {
   const zLevel = Z_LEVELS[zIndex];
 
   return (
-    <s-page heading="Configuration">
-      <s-section heading="Forecast Parameters">
+    <s-page heading={t("settings.title")}>
+      <s-section heading={t("settings.forecastParameters")}>
         <s-stack gap="large">
           {/* Sliders — native range inputs, no Polaris equivalent */}
           <s-grid gridTemplateColumns="1fr 1fr" gap="large">
             <div className="flex flex-col gap-2">
               <label htmlFor="alpha-slider" className="text-sm text-gray-500">
-                EWMA Alpha (α)
+                {t("settings.ewmaAlpha")}
               </label>
               <input
                 id="alpha-slider"
@@ -54,7 +57,7 @@ export default function Settings() {
 
             <div className="flex flex-col gap-2">
               <label htmlFor="z-slider" className="text-sm text-gray-500">
-                Service Level (Z-score)
+                {t("settings.serviceLevel")}
               </label>
               <input
                 id="z-slider"
@@ -77,30 +80,43 @@ export default function Settings() {
           {/* Lead time + sync frequency */}
           <s-grid gridTemplateColumns="1fr 1fr" gap="large">
             <s-text-field
-              label="Default Lead Time (days)"
+              label={t("settings.defaultLeadTime")}
               value={leadTime}
               onInput={(e: Event) =>
                 setLeadTime((e.target as HTMLInputElement).value)
               }
             />
-            <s-select
-              label="Sync Frequency"
-              onChange={(e: Event) => {
-                // value read on save via hidden input
-                void e;
-              }}
-            >
-              <s-option value="1h">Every hour</s-option>
-              <s-option value="6h">Every 6 hours</s-option>
+            <s-select label={t("settings.syncFrequency")}>
+              <s-option value="1h">{t("settings.syncOptions.1h")}</s-option>
+              <s-option value="6h">{t("settings.syncOptions.6h")}</s-option>
               <s-option value="12h" defaultSelected>
-                Every 12 hours
+                {t("settings.syncOptions.12h")}
               </s-option>
-              <s-option value="24h">Every 24 hours</s-option>
+              <s-option value="24h">{t("settings.syncOptions.24h")}</s-option>
+            </s-select>
+          </s-grid>
+
+          <s-divider />
+
+          {/* Language */}
+          <s-grid gridTemplateColumns="1fr 1fr" gap="large">
+            <s-select
+              label={t("settings.language")}
+              onChange={(e: Event) =>
+                setLanguage((e.currentTarget as HTMLSelectElement).value)
+              }
+            >
+              <s-option value="en" {...(i18n.language === "en" ? { defaultSelected: true } : {})}>
+                {t("settings.languages.en")}
+              </s-option>
+              <s-option value="ja" {...(i18n.language === "ja" ? { defaultSelected: true } : {})}>
+                {t("settings.languages.ja")}
+              </s-option>
             </s-select>
           </s-grid>
 
           {actionData?.success && (
-            <s-banner tone="success">Configuration saved.</s-banner>
+            <s-banner tone="success">{t("settings.saved")}</s-banner>
           )}
 
           <Form method="post">
@@ -108,7 +124,7 @@ export default function Settings() {
             <input type="hidden" name="z" value={zLevel.z} />
             <input type="hidden" name="leadTime" value={leadTime} />
             <s-button variant="primary" type="submit">
-              Save Configuration
+              {t("settings.save")}
             </s-button>
           </Form>
         </s-stack>

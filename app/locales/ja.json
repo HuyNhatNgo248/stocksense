@@ -1,0 +1,130 @@
+{
+  "nav": {
+    "dashboard": "ダッシュボード",
+    "alerts": "アラート",
+    "howItWorks": "仕組み",
+    "settings": "設定"
+  },
+  "dashboard": {
+    "title": "ダッシュボード",
+    "inventoryStatus": "在庫ステータス",
+    "searchPlaceholder": "SKUまたは商品名で検索...",
+    "showing": "{{total}}件中{{from}}〜{{to}}件を表示",
+    "page": "{{total}}ページ中{{current}}ページ",
+    "columns": {
+      "product": "商品",
+      "sku": "SKU",
+      "status": "ステータス",
+      "stock": "在庫",
+      "reorderPoint": "発注点",
+      "safetyStock": "安全在庫",
+      "velocityDay": "販売速度/日"
+    },
+    "filters": {
+      "all": "すべて",
+      "critical": "緊急",
+      "reorder": "発注",
+      "ok": "正常"
+    },
+    "quickStats": {
+      "critical": "緊急",
+      "criticalDesc": "安全在庫以下の在庫切れリスクがあるSKU",
+      "sinceYesterday": "昨日から",
+      "reorderSoon": "まもなく発注",
+      "reorderDesc": "安全在庫と発注点の間にあり、今すぐ発注が必要なSKU",
+      "thisWeek": "今週",
+      "totalSkus": "総SKU数",
+      "totalSkusDesc": "追跡・予測中の商品の総数",
+      "thisMonth": "今月",
+      "forecastAccuracy": "予測精度",
+      "forecastAccuracyDesc": "EWMA速度予測が実際の日次販売に一致する精度",
+      "vsLastMonth": "先月比"
+    },
+    "panel": {
+      "stockMetrics": "在庫指標",
+      "currentStock": "現在の在庫",
+      "safetyStock": "安全在庫",
+      "reorderPoint": "発注点",
+      "leadTime": "リードタイム",
+      "avgVelocity": "平均販売速度",
+      "unitsPerDay": "個/日",
+      "forecastFormula": "予測式",
+      "trend": "30日間のトレンド",
+      "actions": "アクション"
+    }
+  },
+  "alerts": {
+    "title": "アラート",
+    "inventoryAlerts": "在庫アラート",
+    "criticalSection": "緊急 — 即時対応が必要",
+    "reorderSection": "まもなく発注が必要",
+    "noCritical": "現在、緊急の在庫アラートはありません。",
+    "noReorder": "発注閾値に近づいている商品はありません。",
+    "loadMore": "さらに読み込む（{{shown}}件 / {{total}}件）",
+    "filters": {
+      "all": "すべて",
+      "critical": "緊急",
+      "reorder": "発注"
+    },
+    "card": {
+      "outOfStock": "在庫切れ",
+      "reorderSoon": "まもなく発注",
+      "currentStock": "現在の在庫",
+      "stockout": "在庫切れまで",
+      "suggestedOrder": "推奨発注数",
+      "demand30Days": "需要・30日間",
+      "daysRemaining": "残り{{days}}日",
+      "daysCoverage": "約{{days}}日分",
+      "reorderPoint": "発注点",
+      "leadTime": "リードタイム",
+      "units": "{{n}}個",
+      "days": "{{n}}日",
+      "placeOrder": "発注する・{{n}}個",
+      "viewDemandHistory": "需要履歴を見る",
+      "now": "今すぐ"
+    },
+    "items": "{{n}}件"
+  },
+  "settings": {
+    "title": "設定",
+    "subtitle": "モデルパラメータと同期設定",
+    "reorderPlan": "発注計画",
+    "sync": "同期",
+    "forecastParameters": "予測パラメータ",
+    "ewmaAlpha": "EWMAアルファ（α）",
+    "serviceLevel": "サービスレベル（Zスコア）",
+    "defaultLeadTime": "デフォルトリードタイム（日）",
+    "syncFrequency": "同期頻度",
+    "syncOptions": {
+      "1h": "1時間ごと",
+      "6h": "6時間ごと",
+      "12h": "12時間ごと",
+      "24h": "24時間ごと"
+    },
+    "save": "設定を保存",
+    "saved": "設定を保存しました。",
+    "language": "言語",
+    "languages": {
+      "en": "English",
+      "ja": "日本語"
+    }
+  },
+  "howItWorks": {
+    "title": "StockSenseの仕組み",
+    "subtitle": "StockSenseは統計的予測を使用して、在庫切れのタイミングと必要なバッファ量を予測します。",
+    "constants": "定数",
+    "quickReference": "クイックリファレンス",
+    "sections": {
+      "velocity": "1. 販売速度（EWMA）",
+      "variability": "2. 需要変動（σ）",
+      "safetyStock": "3. 安全在庫",
+      "cycleStock": "4. サイクル在庫",
+      "rop": "5. 発注点（ROP）",
+      "status": "6. ステータス分類"
+    }
+  },
+  "common": {
+    "explainCalculation": "計算を説明",
+    "demandHistory": "需要履歴"
+  }
+}

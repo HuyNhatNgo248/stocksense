@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { VelocityHistory } from "@/types/api";
 
 import { useVelocityHistory } from "@/hooks/use-velocity-history";
@@ -65,6 +66,7 @@ export function DemandHistoryModal({
 }
 
 export function DemandHistoryButton({ modalId }: { modalId: string }) {
+  const { t } = useTranslation();
   return (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     <s-button
@@ -73,7 +75,7 @@ export function DemandHistoryButton({ modalId }: { modalId: string }) {
       commandFor={modalId}
       command="--show"
     >
-      View Demand History
+      {t("common.demandHistory")}
     </s-button>
   );
 }

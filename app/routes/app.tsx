@@ -2,6 +2,7 @@ import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
+import { useTranslation } from "react-i18next";
 
 import { authenticate } from "../shopify.server";
 
@@ -30,14 +31,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
+  const { t } = useTranslation();
 
   return (
     <AppProvider embedded apiKey={apiKey}>
       <s-app-nav>
-        <s-link href="/app">Dashboard</s-link>
-        <s-link href="/app/alerts">Alerts</s-link>
-        <s-link href="/app/how-it-works">How It Works</s-link>
-        <s-link href="/app/settings">Settings</s-link>
+        <s-link href="/app">{t("nav.dashboard")}</s-link>
+        <s-link href="/app/alerts">{t("nav.alerts")}</s-link>
+        <s-link href="/app/how-it-works">{t("nav.howItWorks")}</s-link>
+        <s-link href="/app/settings">{t("nav.settings")}</s-link>
       </s-app-nav>
       <Outlet />
     </AppProvider>
