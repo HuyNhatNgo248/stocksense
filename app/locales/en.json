@@ -82,7 +82,8 @@
       "viewDemandHistory": "View Demand History",
       "now": "Now"
     },
-    "items": "{{n}} items"
+    "items": "{{n}} items",
+    "searchPlaceholder": "Search SKU or product..."
   },
   "settings": {
     "title": "Configuration",

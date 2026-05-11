@@ -82,7 +82,8 @@
       "viewDemandHistory": "需要履歴を見る",
       "now": "今すぐ"
     },
-    "items": "{{n}}件"
+    "items": "{{n}}件",
+    "searchPlaceholder": "SKUまたは商品名で検索..."
   },
   "settings": {
     "title": "設定",

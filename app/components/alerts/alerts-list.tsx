@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PAGE_LIMIT } from "@/routes/app.alerts";
 import { Icon } from "@/components/icon";
@@ -18,7 +18,6 @@ import {
 import { useVelocityHistory } from "@/hooks/use-velocity-history";
 import { useVariantImage } from "@/hooks/use-variant-image";
 import { DemandTrend } from "@/components/alerts/demand-trend";
-import { Metric } from "@/components/alerts/metric";
 import { ProductVariantLink } from "@/components/product-variant-link";
 
 export function AlertsListSkeleton() {
@@ -30,41 +29,50 @@ export function AlertsListSkeleton() {
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="rounded-xl border border-gray-200 border-l-4 border-l-gray-300 bg-white animate-pulse"
+              className="rounded-xl border border-gray-200 bg-white p-5 animate-pulse"
             >
-              <div className="flex items-center justify-between p-4">
-                <div className="flex gap-3 items-center">
-                  <div className="w-11 h-11 rounded-lg bg-gray-200" />
-                  <div className="flex flex-col gap-2">
-                    <div className="h-4 w-44 bg-gray-200 rounded" />
-                    <div className="h-3 w-28 bg-gray-100 rounded" />
+              <div className="flex gap-5">
+                <div className="w-40 h-40 shrink-0 rounded-lg bg-gray-200" />
+                <div className="flex-1 flex flex-col gap-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex flex-col gap-2">
+                      <div className="h-5 w-56 bg-gray-200 rounded" />
+                      <div className="h-3 w-32 bg-gray-100 rounded" />
+                      <div className="h-6 w-24 bg-gray-200 rounded-full" />
+                    </div>
+                    <div className="h-8 w-36 bg-gray-100 rounded" />
                   </div>
-                </div>
-                <div className="flex gap-2">
-                  <div className="h-6 w-24 bg-gray-200 rounded-full" />
-                  <div className="h-8 w-36 bg-gray-100 rounded" />
-                </div>
-              </div>
-              <div className="border-t border-gray-100" />
-              <div className="grid grid-cols-4 gap-6 p-4">
-                {[0, 1, 2, 3].map((m) => (
-                  <div key={m} className="flex flex-col gap-2">
-                    <div className="h-2 w-20 bg-gray-100 rounded" />
-                    <div className="h-7 w-16 bg-gray-200 rounded" />
-                    <div className="h-2 w-24 bg-gray-100 rounded" />
+                  <div className="border border-gray-200 rounded-lg grid grid-cols-4 divide-x divide-gray-200">
+                    {[0, 1, 2, 3].map((m) => (
+                      <div key={m} className="px-4 py-3 flex flex-col gap-2">
+                        <div className="h-3 w-20 bg-gray-100 rounded" />
+                        <div className="h-7 w-16 bg-gray-200 rounded" />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              <div className="border-t border-gray-100" />
-              <div className="flex items-center justify-between px-4 py-3">
-                <div className="h-3 w-64 bg-gray-100 rounded" />
-                <div className="h-8 w-36 bg-gray-200 rounded" />
+                  <div className="h-3 w-64 bg-gray-100 rounded" />
+                </div>
               </div>
             </div>
           ))}
         </s-stack>
       ))}
     </s-stack>
+  );
+}
+
+function MetricCell({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="px-5 py-4 flex flex-col gap-1.5">
+      <span className="text-sm text-gray-500">{label}</span>
+      {children}
+    </div>
   );
 }
 
@@ -84,127 +92,103 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
   const safetyStock = Math.round(forecast.safetyStock);
   const suggestedOrder =
     Math.round(forecast.velocityPerDay * product.leadTimeDays) + safetyStock;
-  const coverageDays =
-    forecast.velocityPerDay > 0
-      ? Math.round(suggestedOrder / forecast.velocityPerDay)
-      : 0;
   const urgentClass = isCritical ? "text-red-600" : "text-amber-600";
 
   return (
     <>
-      <div
-        className={cn(
-          "bg-white rounded-xl border border-gray-200 border-l-4 overflow-hidden",
-          isCritical ? "border-l-red-500" : "border-l-amber-400",
-        )}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-lg bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center">
-              {imageLoading ? (
-                <div className="w-full h-full bg-gray-200 animate-pulse" />
-              ) : imageUrl ? (
-                <img
-                  src={imageUrl}
-                  alt={product.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Icon icon="Package" size={20} className="text-gray-400" />
-              )}
-            </div>
-            <div className="flex flex-col">
-              <ProductVariantLink
-                shopifyProductId={product.shopifyProductId}
-                shopifyVariantId={product.shopifyVariantId}
-              >
-                <span className="font-semibold text-gray-900">
-                  {product.title}
-                </span>
-              </ProductVariantLink>
-              <span className="text-sm text-gray-500">{product.sku}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold",
-                isCritical
-                  ? "bg-red-100 text-red-700"
-                  : "bg-amber-100 text-amber-700",
-              )}
-            >
-              <span
-                className={cn(
-                  "w-1.5 h-1.5 rounded-full",
-                  isCritical ? "bg-red-500" : "bg-amber-500",
-                )}
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="flex gap-5">
+          {/* Product image */}
+          <div className="w-40 h-40 shrink-0 rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center">
+            {imageLoading ? (
+              <div className="w-full h-full bg-gray-200 animate-pulse" />
+            ) : imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={product.title}
+                className="w-full h-full object-cover"
               />
-              {isCritical
-                ? t("alerts.card.outOfStock")
-                : t("alerts.card.reorderSoon")}
-            </span>
-            <DemandHistoryButton modalId={modalId} />
+            ) : (
+              <Icon icon="Package" size={40} className="text-gray-300" />
+            )}
           </div>
-        </div>
 
-        <div className="border-t border-gray-100" />
+          {/* Content */}
+          <div className="flex-1 flex flex-col gap-4 min-w-0">
+            {/* Title row */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col gap-1 min-w-0">
+                <ProductVariantLink
+                  shopifyProductId={product.shopifyProductId}
+                  shopifyVariantId={product.shopifyVariantId}
+                >
+                  <span className="font-bold text-gray-900 text-lg leading-tight">
+                    {product.title}
+                  </span>
+                </ProductVariantLink>
+                <span className="text-sm text-gray-500">SKU: {product.sku}</span>
+                <span
+                  className={cn(
+                    "mt-1 self-start px-3 py-1 rounded-full text-sm font-semibold",
+                    isCritical
+                      ? "bg-red-100 text-red-600"
+                      : "bg-amber-100 text-amber-600",
+                  )}
+                >
+                  {isCritical
+                    ? t("alerts.card.outOfStock")
+                    : t("alerts.card.reorderSoon")}
+                </span>
+              </div>
+              <div className="shrink-0">
+                <DemandHistoryButton modalId={modalId} />
+              </div>
+            </div>
 
-        {/* Metrics */}
-        <div className="grid grid-cols-4 gap-6 p-4">
-          <Metric
-            label={t("alerts.card.currentStock")}
-            value={t("alerts.card.units", { n: product.currentStock })}
-            valueClass={urgentClass}
-          />
-          <Metric
-            label={t("alerts.card.stockout")}
-            value={
-              daysLeft === 0
-                ? t("alerts.card.now")
-                : t("alerts.card.days", { n: daysLeft })
-            }
-            valueClass={urgentClass}
-            subtext={t("alerts.card.daysRemaining", { days: daysLeft })}
-          />
-          <Metric
-            label={t("alerts.card.suggestedOrder")}
-            value={t("alerts.card.units", { n: suggestedOrder })}
-            valueClass="text-blue-600"
-            subtext={
-              coverageDays > 0
-                ? t("alerts.card.daysCoverage", { days: coverageDays })
-                : undefined
-            }
-          />
-          <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-bold tracking-widest uppercase text-gray-400">
-              {t("alerts.card.demand30Days")}
-            </span>
-            <DemandTrend
-              forecast={forecast}
-              velocityData={velocityData}
-              velocityLoading={velocityLoading}
-            />
+            {/* Metrics grid */}
+            <div className="border border-gray-200 rounded-lg grid grid-cols-4 divide-x divide-gray-200">
+              <MetricCell label={t("alerts.card.currentStock")}>
+                <span className={cn("text-2xl font-bold", urgentClass)}>
+                  {t("alerts.card.units", { n: product.currentStock })}
+                </span>
+              </MetricCell>
+              <MetricCell label={t("alerts.card.stockout")}>
+                <span className={cn("text-2xl font-bold", urgentClass)}>
+                  {daysLeft === 0
+                    ? t("alerts.card.now")
+                    : t("alerts.card.days", { n: daysLeft })}
+                </span>
+              </MetricCell>
+              <MetricCell label={t("alerts.card.suggestedOrder")}>
+                <span className="text-2xl font-bold text-blue-600">
+                  {t("alerts.card.units", { n: suggestedOrder })}
+                </span>
+              </MetricCell>
+              <MetricCell label={t("alerts.card.demand30Days")}>
+                <DemandTrend
+                  forecast={forecast}
+                  velocityData={velocityData}
+                  velocityLoading={velocityLoading}
+                />
+              </MetricCell>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <Icon icon="Info" size={15} className="shrink-0 text-gray-400" />
+              <span>
+                {t("alerts.card.reorderPoint")}:{" "}
+                <strong className="font-semibold text-gray-700">
+                  {t("alerts.card.units", { n: Math.round(forecast.reorderPoint) })}
+                </strong>
+                {" · "}
+                {t("alerts.card.leadTime")}:{" "}
+                <strong className="font-semibold text-gray-700">
+                  {t("alerts.card.days", { n: product.leadTimeDays })}
+                </strong>
+              </span>
+            </div>
           </div>
-        </div>
-
-        <div className="border-t border-gray-100" />
-
-        {/* Footer */}
-        <div className="flex items-center justify-between px-4 py-3">
-          <span className="text-sm text-gray-500">
-            {t("alerts.card.reorderPoint")}:{" "}
-            <strong className="text-gray-700 font-semibold">
-              {t("alerts.card.units", { n: Math.round(forecast.reorderPoint) })}
-            </strong>{" "}
-            · {t("alerts.card.leadTime")}:{" "}
-            <strong className="text-gray-700 font-semibold">
-              {t("alerts.card.days", { n: product.leadTimeDays })}
-            </strong>
-          </span>
         </div>
       </div>
 
@@ -227,12 +211,14 @@ function AlertSection({
   status,
   initial,
   emptyMessage,
+  search,
 }: {
   title: string;
   tone: "critical" | "caution";
   status: ForecastStatus;
   initial: ForecastListResponse;
   emptyMessage: string;
+  search: string;
 }) {
   const { t } = useTranslation();
   const [forecasts, setForecasts] = useState<Forecast[]>(initial.data);
@@ -240,15 +226,20 @@ function AlertSection({
   const [totalPages, setTotalPages] = useState(initial.totalPages);
   const [total, setTotal] = useState(initial.total);
   const [loading, setLoading] = useState(false);
+  const mounted = useRef(false);
 
-  async function loadMore() {
+  async function loadPage(page: number, q: string, append: boolean) {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/app/inventory?status=${status}&page=${currentPage + 1}&limit=${PAGE_LIMIT}`,
-      );
+      const params = new URLSearchParams({
+        status,
+        page: String(page),
+        limit: String(PAGE_LIMIT),
+      });
+      if (q) params.set("search", q);
+      const res = await fetch(`/app/inventory?${params.toString()}`);
       const data: ForecastListResponse = await res.json();
-      setForecasts((prev) => [...prev, ...data.data]);
+      setForecasts(append ? (prev) => [...prev, ...data.data] : data.data);
       setCurrentPage(data.page);
       setTotalPages(data.totalPages);
       setTotal(data.total);
@@ -256,6 +247,13 @@ function AlertSection({
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (!mounted.current) { mounted.current = true; return; }
+    const timer = setTimeout(() => loadPage(1, search, false), 400);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   const hasMore = currentPage < totalPages;
 
@@ -290,7 +288,7 @@ function AlertSection({
             <div className="flex justify-center">
               <s-button
                 variant="secondary"
-                onClick={loadMore}
+                onClick={() => loadPage(currentPage + 1, search, true)}
                 loading={loading ? true : undefined}
               >
                 {t("alerts.loadMore", { shown: forecasts.length, total })}
@@ -315,41 +313,54 @@ interface AlertsListProps {
 export function AlertsList({ critical, reorder }: AlertsListProps) {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<FilterValue>("all");
+  const [search, setSearch] = useState("");
   const total = critical.total + reorder.total;
 
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-semibold text-gray-900">
-            {t("alerts.inventoryAlerts")}
-          </span>
-          <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
-            {total}
-          </span>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-semibold text-gray-900">
+              {t("alerts.inventoryAlerts")}
+            </span>
+            <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
+              {total}
+            </span>
+          </div>
+
+          <s-stack direction="inline" gap="small-400">
+            <s-button
+              variant={filter === "all" ? "secondary" : "tertiary"}
+              onClick={() => setFilter("all")}
+            >
+              {t("alerts.filters.all")}
+            </s-button>
+            <s-button
+              variant={filter === "critical" ? "secondary" : "tertiary"}
+              onClick={() => setFilter("critical")}
+            >
+              {t("alerts.filters.critical")}
+            </s-button>
+            <s-button
+              variant={filter === "reorder" ? "secondary" : "tertiary"}
+              onClick={() => setFilter("reorder")}
+            >
+              {t("alerts.filters.reorder")}
+            </s-button>
+          </s-stack>
         </div>
 
-        <s-stack direction="inline" gap="small-400">
-          <s-button
-            variant={filter === "all" ? "secondary" : "tertiary"}
-            onClick={() => setFilter("all")}
-          >
-            {t("alerts.filters.all")}
-          </s-button>
-          <s-button
-            variant={filter === "critical" ? "secondary" : "tertiary"}
-            onClick={() => setFilter("critical")}
-          >
-            {t("alerts.filters.critical")}
-          </s-button>
-          <s-button
-            variant={filter === "reorder" ? "secondary" : "tertiary"}
-            onClick={() => setFilter("reorder")}
-          >
-            {t("alerts.filters.reorder")}
-          </s-button>
-        </s-stack>
+        <s-search-field
+          label="Search"
+          labelAccessibilityVisibility="exclusive"
+          placeholder={t("alerts.searchPlaceholder")}
+          value={search}
+          onInput={(e: Event) =>
+            setSearch((e.target as HTMLInputElement).value)
+          }
+        />
       </div>
 
       {filter !== "reorder" && (
@@ -359,6 +370,7 @@ export function AlertsList({ critical, reorder }: AlertsListProps) {
           status="CRITICAL"
           initial={critical}
           emptyMessage={t("alerts.noCritical")}
+          search={search}
         />
       )}
       {filter !== "critical" && (
@@ -368,6 +380,7 @@ export function AlertsList({ critical, reorder }: AlertsListProps) {
           status="REORDER"
           initial={reorder}
           emptyMessage={t("alerts.noReorder")}
+          search={search}
         />
       )}
     </div>
