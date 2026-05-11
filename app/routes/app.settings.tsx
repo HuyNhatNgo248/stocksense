@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   ActionFunctionArgs,
@@ -64,6 +64,13 @@ export default function Settings() {
   const [leadTime, setLeadTime] = useState(String(settings.defaultLeadTimeDays));
   const [syncFreq, setSyncFreq] = useState(settings.syncFrequencyHours);
   const zLevel = Z_LEVELS[zIndex];
+
+  useEffect(() => {
+    if (actionData?.success) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).shopify?.toast.show(t("settings.saved"), { duration: 3000 });
+    }
+  }, [actionData, t]);
 
   return (
     <s-page heading={t("settings.title")}>
@@ -160,10 +167,6 @@ export default function Settings() {
               </s-option>
             </s-select>
           </s-grid>
-
-          {actionData?.success && (
-            <s-banner tone="success">{t("settings.saved")}</s-banner>
-          )}
 
           <Form method="post">
             <input type="hidden" name="alpha" value={alpha} />
