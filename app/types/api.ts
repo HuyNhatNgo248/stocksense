@@ -54,3 +54,13 @@ export interface VelocityHistoryEntry {
 }
 
 export type VelocityHistory = VelocityHistoryEntry[];
+
+export interface AppSettings {
+  id: string;
+  shopId: string;
+  ewmaAlpha: number;
+  defaultLeadTimeDays: number;
+  defaultServiceLevelZ: number;
+  syncFrequencyHours: number;
+  updatedAt: string;
+}

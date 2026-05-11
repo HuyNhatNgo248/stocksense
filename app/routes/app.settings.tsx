@@ -2,10 +2,15 @@
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { ActionFunctionArgs, HeadersFunction } from "react-router";
-import { Form, useActionData } from "react-router";
+import type {
+  ActionFunctionArgs,
+  HeadersFunction,
+  LoaderFunctionArgs,
+} from "react-router";
+import { Form, useActionData, useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
+import { createApiClient } from "@/lib/api.server";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { setLanguage } from "@/i18n";
 
@@ -16,25 +21,55 @@ const Z_LEVELS = [
   { z: 2.326, label: "99%" },
 ] as const;
 
+function zToIndex(z: number): number {
+  const idx = Z_LEVELS.findIndex((l) => l.z === z);
+  return idx >= 0 ? idx : 1;
+}
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { session } = await authenticate.admin(request);
+  const api = createApiClient({
+    shop: session.shop,
+    accessToken: session.accessToken ?? "",
+  });
+  const settings = await api.settings.get();
+  return { settings };
+};
+
 export const action = async ({ request }: ActionFunctionArgs) => {
-  await authenticate.admin(request);
-  // TODO: persist to backend when settings API is available
+  const { session } = await authenticate.admin(request);
+  const api = createApiClient({
+    shop: session.shop,
+    accessToken: session.accessToken ?? "",
+  });
+
+  const form = await request.formData();
+  await api.settings.update({
+    ewmaAlpha: Number(form.get("alpha")),
+    defaultServiceLevelZ: Number(form.get("z")),
+    defaultLeadTimeDays: Number(form.get("leadTime")),
+    syncFrequencyHours: Number(form.get("syncFrequency")),
+  });
+
   return { success: true };
 };
 
 export default function Settings() {
   const { t, i18n } = useTranslation();
+  const { settings } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
-  const [alpha, setAlpha] = useState(0.3);
-  const [zIndex, setZIndex] = useState(1);
-  const [leadTime, setLeadTime] = useState("14");
+
+  const [alpha, setAlpha] = useState(settings.ewmaAlpha);
+  const [zIndex, setZIndex] = useState(zToIndex(settings.defaultServiceLevelZ));
+  const [leadTime, setLeadTime] = useState(String(settings.defaultLeadTimeDays));
+  const [syncFreq, setSyncFreq] = useState(settings.syncFrequencyHours);
   const zLevel = Z_LEVELS[zIndex];
 
   return (
     <s-page heading={t("settings.title")}>
       <s-section heading={t("settings.forecastParameters")}>
         <s-stack gap="large">
-          {/* Sliders — native range inputs, no Polaris equivalent */}
+          {/* Sliders */}
           <s-grid gridTemplateColumns="1fr 1fr" gap="large">
             <div className="flex flex-col gap-2">
               <label htmlFor="alpha-slider" className="text-sm text-gray-500">
@@ -86,13 +121,24 @@ export default function Settings() {
                 setLeadTime((e.target as HTMLInputElement).value)
               }
             />
-            <s-select label={t("settings.syncFrequency")}>
-              <s-option value="1h">{t("settings.syncOptions.1h")}</s-option>
-              <s-option value="6h">{t("settings.syncOptions.6h")}</s-option>
-              <s-option value="12h" defaultSelected>
+            <s-select
+              label={t("settings.syncFrequency")}
+              onChange={(e: Event) =>
+                setSyncFreq(Number((e.currentTarget as HTMLSelectElement).value))
+              }
+            >
+              <s-option value="1" {...(syncFreq === 1 ? { defaultSelected: true } : {})}>
+                {t("settings.syncOptions.1h")}
+              </s-option>
+              <s-option value="6" {...(syncFreq === 6 ? { defaultSelected: true } : {})}>
+                {t("settings.syncOptions.6h")}
+              </s-option>
+              <s-option value="12" {...(syncFreq === 12 ? { defaultSelected: true } : {})}>
                 {t("settings.syncOptions.12h")}
               </s-option>
-              <s-option value="24h">{t("settings.syncOptions.24h")}</s-option>
+              <s-option value="24" {...(syncFreq === 24 ? { defaultSelected: true } : {})}>
+                {t("settings.syncOptions.24h")}
+              </s-option>
             </s-select>
           </s-grid>
 
@@ -123,6 +169,7 @@ export default function Settings() {
             <input type="hidden" name="alpha" value={alpha} />
             <input type="hidden" name="z" value={zLevel.z} />
             <input type="hidden" name="leadTime" value={leadTime} />
+            <input type="hidden" name="syncFrequency" value={syncFreq} />
             <s-button variant="primary" type="submit">
               {t("settings.save")}
             </s-button>

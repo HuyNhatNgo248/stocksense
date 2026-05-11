@@ -1,4 +1,5 @@
 import type {
+  AppSettings,
   ForecastListResponse,
   ForecastMetrics,
   VelocityHistory,
@@ -12,22 +13,43 @@ interface ApiClientOptions {
 }
 
 function createApiClient({ shop, accessToken }: ApiClientOptions) {
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
+    "x-shopify-shop-domain": shop,
+    "Content-Type": "application/json",
+  };
+
   async function get<T>(path: string): Promise<T> {
+    const res = await fetch(`${BASE_URL}${path}`, { headers });
+    if (!res.ok) throw new Error(`API error ${res.status}: ${path}`);
+    return res.json() as Promise<T>;
+  }
+
+  async function put<T>(path: string, body: unknown): Promise<T> {
     const res = await fetch(`${BASE_URL}${path}`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "x-shopify-shop-domain": shop,
-      },
+      method: "PUT",
+      headers,
+      body: JSON.stringify(body),
     });
-
-    if (!res.ok) {
-      throw new Error(`API error ${res.status}: ${path}`);
-    }
-
+    if (!res.ok) throw new Error(`API error ${res.status}: ${path}`);
     return res.json() as Promise<T>;
   }
 
   return {
+    settings: {
+      get: () => get<AppSettings>("/api/settings"),
+      update: (
+        data: Partial<
+          Pick<
+            AppSettings,
+            | "ewmaAlpha"
+            | "defaultLeadTimeDays"
+            | "defaultServiceLevelZ"
+            | "syncFrequencyHours"
+          >
+        >,
+      ) => put<AppSettings>("/api/settings", data),
+    },
     forecasts: {
       list: ({
         page = 1,
@@ -57,6 +79,7 @@ function createApiClient({ shop, accessToken }: ApiClientOptions) {
 }
 
 export type {
+  AppSettings,
   Forecast,
   ForecastListResponse,
   ForecastMetrics,
