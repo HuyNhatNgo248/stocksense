@@ -184,9 +184,11 @@ function PanelActions({ modalId }: { modalId: string }) {
   return (
     <s-stack gap="small-300">
       <SectionLabel>Actions</SectionLabel>
-      <s-button variant="secondary" icon="info">
-        Explain Calculation
-      </s-button>
+      <s-link href="/app/how-it-works">
+        <s-button variant="secondary" icon="info">
+          Explain Calculation
+        </s-button>
+      </s-link>
       <DemandHistoryButton modalId={modalId} />
     </s-stack>
   );
