@@ -2,6 +2,9 @@
 
 A Shopify app that prevents stockouts through statistical inventory forecasting. StockSense analyzes your sales history using EWMA (Exponentially Weighted Moving Average) to calculate real-time sales velocity, safety stock, and reorder points for every SKU — then surfaces actionable alerts before you run out.
 
+![dashboard](public/dashboard.png)
+![dashboard](public/alerts.png)
+
 ## Features
 
 - **Dashboard** — Inventory table with live status badges (OK / REORDER / CRITICAL), quick stats summary, and a product detail panel with velocity history charts
