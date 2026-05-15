@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData } from "react-router";
+import { Page } from "@shopify/polaris";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
@@ -40,13 +41,13 @@ export default function AlertsPage() {
   const { t } = useTranslation();
 
   return (
-    <s-page heading={t("alerts.title")}>
+    <Page title={t("alerts.title")}>
       <Suspense fallback={<AlertsListSkeleton />}>
         <Await resolve={Promise.all([critical, reorder])}>
           {([c, r]) => <AlertsList critical={c} reorder={r} />}
         </Await>
       </Suspense>
-    </s-page>
+    </Page>
   );
 }
 

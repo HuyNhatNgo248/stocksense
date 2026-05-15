@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@shopify/polaris/build/esm/styles.css";
 
 s-table-row {
   cursor: pointer;

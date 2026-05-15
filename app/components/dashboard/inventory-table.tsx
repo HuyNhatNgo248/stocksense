@@ -1,8 +1,20 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useFetcher } from "react-router";
+import {
+  Badge,
+  BlockStack,
+  Card,
+  IndexFilters,
+  IndexFiltersMode,
+  IndexTable,
+  SkeletonBodyText,
+  SkeletonDisplayText,
+  Text,
+  useSetIndexFiltersMode,
+} from "@shopify/polaris";
 import type {
   Forecast,
   ForecastListResponse,
@@ -20,81 +32,12 @@ interface InventoryTableProps {
 const STATUS_FILTERS = ["All", "Critical", "Reorder", "OK"] as const;
 export type StatusFilter = (typeof STATUS_FILTERS)[number];
 
-const STATUS_TONE: Record<ForecastStatus, "critical" | "caution" | "success"> =
+const STATUS_TONE: Record<ForecastStatus, "critical" | "warning" | "success"> =
   {
     CRITICAL: "critical",
-    REORDER: "caution",
+    REORDER: "warning",
     OK: "success",
   };
-
-function ClickableTableRow({
-  forecast,
-  onRowClick,
-}: {
-  forecast: Forecast;
-  onRowClick?: (f: Forecast) => void;
-}) {
-  const ref = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const handler = (e: Event) => {
-      if ((e.target as HTMLElement).closest("s-button, button, a, s-link"))
-        return;
-      onRowClick?.(forecast);
-    };
-    el.addEventListener("click", handler);
-    return () => el.removeEventListener("click", handler);
-  }, [forecast, onRowClick]);
-
-  return (
-    <s-table-row
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ref={ref as any}
-    >
-      <s-table-cell>
-        <s-text>{forecast.product.title}</s-text>
-      </s-table-cell>
-      <s-table-cell>
-        <s-text color="subdued">{forecast.product.sku}</s-text>
-      </s-table-cell>
-      <s-table-cell>
-        <s-badge tone={STATUS_TONE[forecast.status]}>{forecast.status}</s-badge>
-      </s-table-cell>
-      <s-table-cell>{forecast.product.currentStock}</s-table-cell>
-      <s-table-cell>{Math.round(forecast.reorderPoint)}</s-table-cell>
-      <s-table-cell>{Math.round(forecast.safetyStock)}</s-table-cell>
-      <s-table-cell>{forecast.velocityPerDay.toFixed(2)}</s-table-cell>
-    </s-table-row>
-  );
-}
-
-export function InventoryTableSkeleton() {
-  return (
-    <s-box padding="base" background="base" borderRadius="base">
-      <s-stack gap="base">
-        <div className="flex justify-between items-center animate-pulse">
-          <div className="h-5 w-36 bg-gray-200 rounded" />
-          <div className="h-8 w-56 bg-gray-200 rounded" />
-        </div>
-        <div className="space-y-3 animate-pulse">
-          <div className="h-4 w-full bg-gray-200 rounded" />
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="grid grid-cols-7 gap-4">
-              <div className="h-4 bg-gray-200 rounded col-span-2" />
-              <div className="h-4 bg-gray-200 rounded" />
-              <div className="h-4 bg-gray-200 rounded" />
-              <div className="h-4 bg-gray-200 rounded" />
-              <div className="h-4 bg-gray-200 rounded" />
-              <div className="h-4 bg-gray-200 rounded" />
-            </div>
-          ))}
-        </div>
-      </s-stack>
-    </s-box>
-  );
-}
 
 const FILTER_KEY: Record<StatusFilter, string> = {
   All: "dashboard.filters.all",
@@ -102,6 +45,17 @@ const FILTER_KEY: Record<StatusFilter, string> = {
   Reorder: "dashboard.filters.reorder",
   OK: "dashboard.filters.ok",
 };
+
+export function InventoryTableSkeleton() {
+  return (
+    <Card>
+      <BlockStack gap="400">
+        <SkeletonDisplayText size="small" />
+        <SkeletonBodyText lines={6} />
+      </BlockStack>
+    </Card>
+  );
+}
 
 export function InventoryTable({
   inventory,
@@ -114,12 +68,14 @@ export function InventoryTable({
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("All");
   const [search, setSearch] = useState("");
   const [, setPage] = useState(inventory.page);
+  const { mode, setMode } = useSetIndexFiltersMode();
 
   const data = fetcher.data ?? inventory;
   const { data: forecasts, totalPages, total, limit } = data;
   const currentPage = data.page;
   const from = total === 0 ? 0 : (currentPage - 1) * limit + 1;
   const to = Math.min(currentPage * limit, total);
+  const isLoading = fetcher.state !== "idle";
 
   function load(newPage: number, filter: StatusFilter, q: string) {
     const params = new URLSearchParams({
@@ -164,95 +120,112 @@ export function InventoryTable({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
+  const tabs = STATUS_FILTERS.map((f, index) => ({
+    content: t(FILTER_KEY[f]),
+    index,
+    onAction: () => setFilter(f),
+    id: f,
+  }));
+
+  const resourceName = {
+    singular: t("dashboard.resourceName.singular", { defaultValue: "product" }),
+    plural: t("dashboard.resourceName.plural", { defaultValue: "products" }),
+  };
+
+  const headings: React.ComponentProps<typeof IndexTable>["headings"] = [
+    { title: t("dashboard.columns.product") },
+    { title: t("dashboard.columns.sku") },
+    { title: t("dashboard.columns.status") },
+    { title: t("dashboard.columns.stock"), alignment: "end" },
+    { title: t("dashboard.columns.reorderPoint"), alignment: "end" },
+    { title: t("dashboard.columns.safetyStock"), alignment: "end" },
+    { title: t("dashboard.columns.velocityDay"), alignment: "end" },
+  ];
+
+  const rowMarkup = forecasts.map((forecast: Forecast, index: number) => (
+    <IndexTable.Row
+      id={forecast.id}
+      key={forecast.id}
+      position={index}
+      onClick={() => onRowClick?.(forecast)}
+    >
+      <IndexTable.Cell>
+        <Text variant="bodyMd" fontWeight="bold" as="span">
+          {forecast.product.title}
+        </Text>
+      </IndexTable.Cell>
+      <IndexTable.Cell>
+        <Text tone="subdued" as="span">
+          {forecast.product.sku}
+        </Text>
+      </IndexTable.Cell>
+      <IndexTable.Cell>
+        <Badge tone={STATUS_TONE[forecast.status]}>{forecast.status}</Badge>
+      </IndexTable.Cell>
+      <IndexTable.Cell>
+        <Text as="span" alignment="end" numeric>
+          {forecast.product.currentStock}
+        </Text>
+      </IndexTable.Cell>
+      <IndexTable.Cell>
+        <Text as="span" alignment="end" numeric>
+          {Math.round(forecast.reorderPoint)}
+        </Text>
+      </IndexTable.Cell>
+      <IndexTable.Cell>
+        <Text as="span" alignment="end" numeric>
+          {Math.round(forecast.safetyStock)}
+        </Text>
+      </IndexTable.Cell>
+      <IndexTable.Cell>
+        <Text as="span" alignment="end" numeric>
+          {forecast.velocityPerDay.toFixed(2)}
+        </Text>
+      </IndexTable.Cell>
+    </IndexTable.Row>
+  ));
+
   return (
-    <s-box padding="base" background="base" borderRadius="base">
-      <s-stack gap="base">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <s-stack direction="inline" gap="base" alignItems="center">
-            <s-heading>{t("dashboard.inventoryStatus")}</s-heading>
-            <s-stack direction="inline" gap="small-400">
-              {STATUS_FILTERS.map((f) => (
-                <s-button
-                  key={f}
-                  variant={activeFilter === f ? "secondary" : "tertiary"}
-                  onClick={() => setFilter(f)}
-                >
-                  {t(FILTER_KEY[f])}
-                </s-button>
-              ))}
-            </s-stack>
-          </s-stack>
-
-          <div className="w-full sm:w-75">
-            <s-search-field
-              label="Search"
-              labelAccessibilityVisibility="exclusive"
-              placeholder={t("dashboard.searchPlaceholder")}
-              value={search}
-              onInput={(e: Event) =>
-                setSearch((e.target as HTMLInputElement).value)
-              }
-            />
-          </div>
-        </div>
-
-        <div
-          className={`overflow-x-auto transition-opacity duration-150 ${fetcher.state !== "idle" ? "opacity-50 pointer-events-none" : ""}`}
-        >
-          <s-table>
-            <s-table-header-row>
-              <s-table-header listSlot="primary">{t("dashboard.columns.product")}</s-table-header>
-              <s-table-header>{t("dashboard.columns.sku")}</s-table-header>
-              <s-table-header>{t("dashboard.columns.status")}</s-table-header>
-              <s-table-header format="numeric">{t("dashboard.columns.stock")}</s-table-header>
-              <s-table-header format="numeric">{t("dashboard.columns.reorderPoint")}</s-table-header>
-              <s-table-header format="numeric">{t("dashboard.columns.safetyStock")}</s-table-header>
-              <s-table-header format="numeric">{t("dashboard.columns.velocityDay")}</s-table-header>
-            </s-table-header-row>
-
-            <s-table-body>
-              {forecasts.map((forecast: Forecast) => (
-                <ClickableTableRow
-                  key={forecast.id}
-                  forecast={forecast}
-                  onRowClick={onRowClick}
-                />
-              ))}
-            </s-table-body>
-          </s-table>
-        </div>
-
-        <s-box padding="small" background="subdued" borderRadius="base">
-          <s-stack
-            direction="inline"
-            alignItems="center"
-            justifyContent="space-between"
-          >
-            <s-text color="subdued">
-              {t("dashboard.showing", { from, to, total })}
-            </s-text>
-            <s-stack direction="inline" alignItems="center" gap="small-200">
-              <s-button
-                variant="tertiary"
-                icon="chevron-left"
-                accessibilityLabel="Previous page"
-                disabled={currentPage <= 1 ? true : undefined}
-                onClick={() => goToPage(currentPage - 1)}
-              />
-              <s-text color="subdued">
-                {t("dashboard.page", { current: currentPage, total: totalPages })}
-              </s-text>
-              <s-button
-                variant="tertiary"
-                icon="chevron-right"
-                accessibilityLabel="Next page"
-                disabled={currentPage >= totalPages ? true : undefined}
-                onClick={() => goToPage(currentPage + 1)}
-              />
-            </s-stack>
-          </s-stack>
-        </s-box>
-      </s-stack>
-    </s-box>
+    <Card padding="0">
+      <IndexFilters
+        queryValue={search}
+        queryPlaceholder={t("dashboard.searchPlaceholder")}
+        onQueryChange={setSearch}
+        onQueryClear={() => setSearch("")}
+        tabs={tabs}
+        selected={STATUS_FILTERS.indexOf(activeFilter)}
+        onSelect={(index) => setFilter(STATUS_FILTERS[index])}
+        mode={mode}
+        setMode={setMode}
+        filters={[]}
+        appliedFilters={[]}
+        onClearAll={() => setSearch("")}
+        canCreateNewView={false}
+        loading={isLoading}
+        cancelAction={{
+          onAction: () => {
+            setSearch("");
+            setMode(IndexFiltersMode.Default);
+          },
+          disabled: false,
+          loading: false,
+        }}
+      />
+      <IndexTable
+        resourceName={resourceName}
+        itemCount={total}
+        headings={headings}
+        selectable={false}
+        pagination={{
+          hasNext: currentPage < totalPages,
+          hasPrevious: currentPage > 1,
+          onNext: () => goToPage(currentPage + 1),
+          onPrevious: () => goToPage(currentPage - 1),
+          label: t("dashboard.showing", { from, to, total }),
+        }}
+      >
+        {rowMarkup}
+      </IndexTable>
+    </Card>
   );
 }

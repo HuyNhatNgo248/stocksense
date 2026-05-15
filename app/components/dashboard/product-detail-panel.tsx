@@ -1,6 +1,21 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useFetcher } from "react-router";
+import { useFetcher, useNavigate } from "react-router";
+import {
+  BlockStack,
+  Box,
+  Button,
+  Card,
+  Divider,
+  InlineStack,
+  Modal,
+  SkeletonThumbnail,
+  Spinner,
+  Text,
+  TextField,
+  Thumbnail,
+} from "@shopify/polaris";
+import { EditIcon, InfoIcon, XIcon } from "@shopify/polaris-icons";
 import type {
   Forecast,
   ForecastProduct,
@@ -12,7 +27,6 @@ import {
   ProductVariantLink,
   type ProductVariantLinkProps,
 } from "@/components/product-variant-link";
-
 import {
   DemandHistoryButton,
   DemandHistoryModal,
@@ -25,9 +39,9 @@ interface ProductDetailPanelProps {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+    <Text as="h3" variant="headingXs" tone="subdued">
       {children}
-    </p>
+    </Text>
   );
 }
 
@@ -41,13 +55,17 @@ function MetricRow({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex justify-between items-center">
-      <s-text color="subdued">{label}</s-text>
-      <div className="flex items-center gap-1">
-        <span className="text-sm font-semibold">{value}</span>
+    <InlineStack align="space-between" blockAlign="center" wrap={false}>
+      <Text as="span" tone="subdued">
+        {label}
+      </Text>
+      <InlineStack gap="100" blockAlign="center" wrap={false}>
+        <Text as="span" variant="bodyMd" fontWeight="semibold">
+          {value}
+        </Text>
         {action}
-      </div>
-    </div>
+      </InlineStack>
+    </InlineStack>
   );
 }
 
@@ -69,36 +87,40 @@ function PanelHeader({
   const { imageUrl, loading } = useVariantImage(variantId);
 
   return (
-    <div className="flex justify-between items-start gap-2">
-      <div className="flex items-start gap-3 min-w-0">
-        <div className="shrink-0 w-14 h-14 rounded overflow-hidden bg-gray-100">
+    <InlineStack align="space-between" blockAlign="start" gap="200" wrap={false}>
+      <Box minWidth="0">
+        <InlineStack gap="300" blockAlign="start" wrap={false}>
           {loading ? (
-            <div className="w-full h-full animate-pulse bg-gray-200" />
+            <SkeletonThumbnail size="medium" />
           ) : imageUrl ? (
-            <img
-              src={imageUrl}
-              alt={title}
-              className="w-full h-full object-cover"
-            />
-          ) : null}
-        </div>
-        <s-stack gap="small-400">
-          <ProductVariantLink
-            shopifyProductId={shopifyProductId}
-            shopifyVariantId={shopifyVariantId}
-          >
-            <s-heading>{title}</s-heading>
-          </ProductVariantLink>
-          <s-text color="subdued">{sku}</s-text>
-        </s-stack>
-      </div>
-      <s-button
+            <Thumbnail size="medium" source={imageUrl} alt={title} />
+          ) : (
+            <SkeletonThumbnail size="medium" />
+          )}
+          <Box minWidth="0">
+            <BlockStack gap="100">
+              <ProductVariantLink
+                shopifyProductId={shopifyProductId}
+                shopifyVariantId={shopifyVariantId}
+              >
+                <Text as="h2" variant="headingMd" truncate>
+                  {title}
+                </Text>
+              </ProductVariantLink>
+              <Text as="span" tone="subdued" truncate>
+                {sku}
+              </Text>
+            </BlockStack>
+          </Box>
+        </InlineStack>
+      </Box>
+      <Button
         variant="tertiary"
-        icon="x"
+        icon={XIcon}
         accessibilityLabel="Close panel"
         onClick={onClose}
       />
-    </div>
+    </InlineStack>
   );
 }
 
@@ -108,18 +130,18 @@ function StockMetrics({
   reorderPoint,
   leadTime,
   velocity,
-  leadTimeModalId,
+  onEditLeadTime,
 }: {
   currentStock: number;
   safetyStock: number;
   reorderPoint: number;
   leadTime: number;
   velocity: string;
-  leadTimeModalId: string;
+  onEditLeadTime: () => void;
 }) {
   const { t } = useTranslation();
   return (
-    <s-stack gap="small-300">
+    <BlockStack gap="300">
       <SectionLabel>{t("dashboard.panel.stockMetrics")}</SectionLabel>
       <MetricRow
         label={t("dashboard.panel.currentStock")}
@@ -137,12 +159,11 @@ function StockMetrics({
         label={t("dashboard.panel.leadTime")}
         value={t("alerts.card.days", { n: leadTime })}
         action={
-          <s-button
+          <Button
             variant="tertiary"
-            icon="edit"
+            icon={EditIcon}
             accessibilityLabel={t("dashboard.panel.updateLeadTime")}
-            commandFor={leadTimeModalId}
-            command="--show"
+            onClick={onEditLeadTime}
           />
         }
       />
@@ -150,7 +171,7 @@ function StockMetrics({
         label={t("dashboard.panel.avgVelocity")}
         value={`${velocity} ${t("dashboard.panel.unitsPerDay")}`}
       />
-    </s-stack>
+    </BlockStack>
   );
 }
 
@@ -169,26 +190,26 @@ function ForecastFormula({
 }) {
   const { t } = useTranslation();
   return (
-    <s-stack gap="small-300">
+    <BlockStack gap="300">
       <SectionLabel>{t("dashboard.panel.forecastFormula")}</SectionLabel>
-      <div
-        className="rounded-lg p-3 text-xs leading-relaxed font-mono"
-        style={{
-          background: "var(--s-color-bg-surface-secondary, #f6f6f7)",
-          color: "#4f46e5",
-        }}
+      <Box
+        padding="300"
+        background="bg-surface-secondary"
+        borderRadius="200"
       >
-        <div>
-          μ = {velocity}, σ = {stddev}, L = {leadTime}
-        </div>
-        <div>
-          Safety = 1.645 × {stddev} × √{leadTime} = {safetyStock}
-        </div>
-        <div>
-          ROP = {velocity} × {leadTime} + {safetyStock} = {reorderPoint}
-        </div>
-      </div>
-    </s-stack>
+        <BlockStack gap="100">
+          <Text as="p" variant="bodySm">
+            μ = {velocity}, σ = {stddev}, L = {leadTime}
+          </Text>
+          <Text as="p" variant="bodySm">
+            Safety = 1.645 × {stddev} × √{leadTime} = {safetyStock}
+          </Text>
+          <Text as="p" variant="bodySm">
+            ROP = {velocity} × {leadTime} + {safetyStock} = {reorderPoint}
+          </Text>
+        </BlockStack>
+      </Box>
+    </BlockStack>
   );
 }
 
@@ -208,93 +229,79 @@ function TrendSection({ variantId }: { variantId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [variantId]);
 
+  const isLoading = fetcher.state !== "idle" || !fetcher.data;
+
   return (
-    <s-stack gap="small-300">
+    <BlockStack gap="300">
       <SectionLabel>{t("dashboard.panel.trend")}</SectionLabel>
-      <div
-        className="rounded-lg p-2"
-        style={{ background: "var(--s-color-bg-surface-secondary, #f6f6f7)" }}
-      >
-        {fetcher.state !== "idle" || !fetcher.data ? (
-          <div className="h-48 w-full rounded animate-pulse bg-gray-200" />
+      <Box padding="200" background="bg-surface-secondary" borderRadius="200">
+        {isLoading ? (
+          <Box
+            padding="400"
+            minHeight="192px"
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: 176,
+              }}
+            >
+              <Spinner accessibilityLabel="Loading trend" size="small" />
+            </div>
+          </Box>
         ) : (
-          <VelocityTrend data={fetcher.data} />
+          <VelocityTrend data={fetcher.data!} />
         )}
-      </div>
-    </s-stack>
+      </Box>
+    </BlockStack>
   );
 }
 
 function PanelActions({ modalId }: { modalId: string }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   return (
-    <s-stack gap="small-300">
+    <BlockStack gap="200">
       <SectionLabel>{t("dashboard.panel.actions")}</SectionLabel>
-      <s-link href="/app/how-it-works">
-        <s-button variant="secondary" icon="info">
-          {t("common.explainCalculation")}
-        </s-button>
-      </s-link>
+      <Button
+        variant="secondary"
+        icon={InfoIcon}
+        onClick={() => navigate("/app/how-it-works")}
+      >
+        {t("common.explainCalculation")}
+      </Button>
       <DemandHistoryButton modalId={modalId} />
-    </s-stack>
+    </BlockStack>
   );
 }
 
 function LeadTimeModal({
-  modalId,
+  open,
+  onClose,
   variantId,
   currentLeadTime,
   onSuccess,
 }: {
-  modalId: string;
+  open: boolean;
+  onClose: () => void;
   variantId: string;
   currentLeadTime: number;
   onSuccess: (newLeadTime: number) => void;
 }) {
   const { t } = useTranslation();
   const fetcher = useFetcher<ForecastProduct>();
-  const saveRef = useRef<HTMLElement>(null);
-  const cancelRef = useRef<HTMLElement>(null);
-  // useRef so the native event listener always reads the latest value
-  const valueRef = useRef(String(currentLeadTime));
   const [value, setValue] = useState(String(currentLeadTime));
 
   useEffect(() => {
-    valueRef.current = value;
-  }, [value]);
-
-  useEffect(() => {
     setValue(String(currentLeadTime));
-    valueRef.current = String(currentLeadTime);
   }, [currentLeadTime]);
-
-  // Native listener — s-modal renders outside the React root so synthetic
-  // onClick on s-button children doesn't fire.
-  useEffect(() => {
-    const el = saveRef.current;
-    if (!el) return;
-    const handler = () => {
-      const days = Number(valueRef.current);
-      if (!days || days < 1) return;
-      fetcher.submit(
-        { variantId, leadTimeDays: days },
-        {
-          method: "post",
-          action: "/app/update-lead-time",
-          encType: "application/json",
-        },
-      );
-    };
-    el.addEventListener("click", handler);
-    return () => el.removeEventListener("click", handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [variantId]);
 
   useEffect(() => {
     if (fetcher.state === "idle" && fetcher.data?.leadTimeDays !== undefined) {
       onSuccess(fetcher.data.leadTimeDays);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (cancelRef.current as any)?.click();
+      onClose();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).shopify?.toast.show(
         t("dashboard.panel.leadTimeUpdated"),
@@ -304,48 +311,49 @@ function LeadTimeModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetcher.state, fetcher.data]);
 
+  function handleSave() {
+    const days = Number(value);
+    if (!days || days < 1) return;
+    fetcher.submit(
+      { variantId, leadTimeDays: days },
+      {
+        method: "post",
+        action: "/app/update-lead-time",
+        encType: "application/json",
+      },
+    );
+  }
+
   return (
-    <s-modal
-      id={modalId}
-      heading={t("dashboard.panel.updateLeadTime")}
-      accessibilityLabel={t("dashboard.panel.updateLeadTime")}
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={t("dashboard.panel.updateLeadTime")}
+      primaryAction={{
+        content: t("common.save"),
+        onAction: handleSave,
+        loading: fetcher.state !== "idle",
+      }}
+      secondaryActions={[
+        {
+          content: t("common.cancel"),
+          onAction: onClose,
+        },
+      ]}
     >
-      <s-stack gap="base">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700">
-            {t("dashboard.panel.leadTimeDaysLabel")}
-          </label>
-          <input
-            type="number"
-            min={1}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <s-button
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ref={saveRef as any}
-          variant="primary"
-          loading={fetcher.state !== "idle" ? true : undefined}
-        >
-          {t("common.save")}
-        </s-button>
-      </s-stack>
-      <s-button
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ref={cancelRef as any}
-        slot={"secondary-actions" as Lowercase<string>}
-        commandFor={modalId}
-        command="--hide"
-      >
-        {t("common.cancel")}
-      </s-button>
-    </s-modal>
+      <Modal.Section>
+        <TextField
+          type="number"
+          label={t("dashboard.panel.leadTimeDaysLabel")}
+          value={value}
+          onChange={setValue}
+          min={1}
+          autoComplete="off"
+        />
+      </Modal.Section>
+    </Modal>
   );
 }
-
-// ── Panel ─────────────────────────────────────────────────────────────────────
 
 export function ProductDetailPanel({
   forecast,
@@ -353,12 +361,12 @@ export function ProductDetailPanel({
 }: ProductDetailPanelProps) {
   const { product } = forecast;
   const modalId = `panel-history-${product.id}`;
-  const leadTimeModalId = `lead-time-modal-${product.id}`;
   const safetyStock = Math.round(forecast.safetyStock);
   const reorderPoint = Math.round(forecast.reorderPoint);
   const velocity = forecast.velocityPerDay.toFixed(2);
   const stddev = forecast.stddevDemand.toFixed(1);
   const [leadTimeDays, setLeadTimeDays] = useState(product.leadTimeDays);
+  const [isLeadTimeOpen, setIsLeadTimeOpen] = useState(false);
 
   useEffect(() => {
     setLeadTimeDays(product.leadTimeDays);
@@ -366,8 +374,8 @@ export function ProductDetailPanel({
 
   return (
     <>
-      <s-box background="base" borderRadius="base" padding="base">
-        <s-stack gap="base">
+      <Card>
+        <BlockStack gap="400">
           <PanelHeader
             title={product.title}
             sku={product.sku}
@@ -376,18 +384,18 @@ export function ProductDetailPanel({
             shopifyVariantId={product.shopifyVariantId}
             onClose={onClose}
           />
-          <s-divider />
+          <Divider />
           <StockMetrics
             currentStock={product.currentStock}
             safetyStock={safetyStock}
             reorderPoint={reorderPoint}
             leadTime={leadTimeDays}
             velocity={velocity}
-            leadTimeModalId={leadTimeModalId}
+            onEditLeadTime={() => setIsLeadTimeOpen(true)}
           />
-          <s-divider />
+          <Divider />
           <TrendSection variantId={product.shopifyVariantId} />
-          <s-divider />
+          <Divider />
           <ForecastFormula
             velocity={velocity}
             stddev={stddev}
@@ -395,17 +403,18 @@ export function ProductDetailPanel({
             safetyStock={safetyStock}
             reorderPoint={reorderPoint}
           />
-          <s-divider />
+          <Divider />
           <PanelActions modalId={modalId} />
-        </s-stack>
-      </s-box>
+        </BlockStack>
+      </Card>
       <DemandHistoryModal
         modalId={modalId}
         productTitle={product.title}
         variantId={product.shopifyVariantId}
       />
       <LeadTimeModal
-        modalId={leadTimeModalId}
+        open={isLeadTimeOpen}
+        onClose={() => setIsLeadTimeOpen(false)}
         variantId={product.shopifyVariantId}
         currentLeadTime={leadTimeDays}
         onSuccess={setLeadTimeDays}

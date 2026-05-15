@@ -7,7 +7,24 @@ import type {
   HeadersFunction,
   LoaderFunctionArgs,
 } from "react-router";
-import { Form, useActionData, useLoaderData } from "react-router";
+import {
+  Form,
+  useActionData,
+  useLoaderData,
+  useNavigation,
+} from "react-router";
+import {
+  BlockStack,
+  Button,
+  Card,
+  Divider,
+  InlineGrid,
+  Page,
+  RangeSlider,
+  Select,
+  Text,
+  TextField,
+} from "@shopify/polaris";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { createApiClient } from "@/lib/api.server";
@@ -58,6 +75,7 @@ export default function Settings() {
   const { t, i18n } = useTranslation();
   const { settings } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
 
   const [alpha, setAlpha] = useState(settings.ewmaAlpha);
   const [zIndex, setZIndex] = useState(zToIndex(settings.defaultServiceLevelZ));
@@ -65,121 +83,117 @@ export default function Settings() {
   const [syncFreq, setSyncFreq] = useState(settings.syncFrequencyHours);
   const zLevel = Z_LEVELS[zIndex];
 
+  const isSubmitting = navigation.state === "submitting";
+  const hasChanges =
+    alpha !== settings.ewmaAlpha ||
+    zLevel.z !== settings.defaultServiceLevelZ ||
+    Number(leadTime) !== settings.defaultLeadTimeDays ||
+    syncFreq !== settings.syncFrequencyHours;
+
   useEffect(() => {
     if (actionData?.success) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).shopify?.toast.show(t("settings.saved"), { duration: 3000 });
+      (window as any).shopify?.toast.show(t("settings.saved"), {
+        duration: 3000,
+      });
     }
   }, [actionData, t]);
 
+  const syncOptions = [
+    { label: t("settings.syncOptions.1h"), value: "1" },
+    { label: t("settings.syncOptions.6h"), value: "6" },
+    { label: t("settings.syncOptions.12h"), value: "12" },
+    { label: t("settings.syncOptions.24h"), value: "24" },
+  ];
+
+  const languageOptions = [
+    { label: t("settings.languages.en"), value: "en" },
+    { label: t("settings.languages.ja"), value: "ja" },
+  ];
+
   return (
-    <s-page heading={t("settings.title")}>
-      <s-section heading={t("settings.forecastParameters")}>
-        <s-stack gap="large">
-          {/* Sliders */}
-          <s-grid gridTemplateColumns="1fr 1fr" gap="large">
-            <div className="flex flex-col gap-2">
-              <label htmlFor="alpha-slider" className="text-sm text-gray-500">
-                {t("settings.ewmaAlpha")}
-              </label>
-              <input
-                id="alpha-slider"
-                type="range"
-                min={0.05}
-                max={0.95}
-                step={0.05}
-                value={alpha}
-                onChange={(e) => setAlpha(Number(e.target.value))}
-                className="w-full accent-blue-600 cursor-pointer"
-              />
-              <code className="text-sm font-mono text-gray-700">
-                α = {alpha.toFixed(2)}
-              </code>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label htmlFor="z-slider" className="text-sm text-gray-500">
-                {t("settings.serviceLevel")}
-              </label>
-              <input
-                id="z-slider"
-                type="range"
-                min={0}
-                max={3}
-                step={1}
-                value={zIndex}
-                onChange={(e) => setZIndex(Number(e.target.value))}
-                className="w-full accent-blue-600 cursor-pointer"
-              />
-              <code className="text-sm font-mono text-gray-700">
-                Z = {zLevel.z} ({zLevel.label})
-              </code>
-            </div>
-          </s-grid>
-
-          <s-divider />
-
-          {/* Lead time + sync frequency */}
-          <s-grid gridTemplateColumns="1fr 1fr" gap="large">
-            <s-text-field
-              label={t("settings.defaultLeadTime")}
-              value={leadTime}
-              onInput={(e: Event) =>
-                setLeadTime((e.target as HTMLInputElement).value)
-              }
-            />
-            <s-select
-              label={t("settings.syncFrequency")}
-              onChange={(e: Event) =>
-                setSyncFreq(Number((e.currentTarget as HTMLSelectElement).value))
-              }
-            >
-              <s-option value="1" {...(syncFreq === 1 ? { defaultSelected: true } : {})}>
-                {t("settings.syncOptions.1h")}
-              </s-option>
-              <s-option value="6" {...(syncFreq === 6 ? { defaultSelected: true } : {})}>
-                {t("settings.syncOptions.6h")}
-              </s-option>
-              <s-option value="12" {...(syncFreq === 12 ? { defaultSelected: true } : {})}>
-                {t("settings.syncOptions.12h")}
-              </s-option>
-              <s-option value="24" {...(syncFreq === 24 ? { defaultSelected: true } : {})}>
-                {t("settings.syncOptions.24h")}
-              </s-option>
-            </s-select>
-          </s-grid>
-
-          <s-divider />
-
-          {/* Language */}
-          <s-grid gridTemplateColumns="1fr 1fr" gap="large">
-            <s-select
-              label={t("settings.language")}
-              onChange={(e: Event) =>
-                setLanguage((e.currentTarget as HTMLSelectElement).value)
-              }
-            >
-              <s-option value="en" {...(i18n.language === "en" ? { defaultSelected: true } : {})}>
-                {t("settings.languages.en")}
-              </s-option>
-              <s-option value="ja" {...(i18n.language === "ja" ? { defaultSelected: true } : {})}>
-                {t("settings.languages.ja")}
-              </s-option>
-            </s-select>
-          </s-grid>
+    <Page title={t("settings.title")}>
+      <Card>
+        <BlockStack gap="500">
+          <Text as="h2" variant="headingMd">
+            {t("settings.forecastParameters")}
+          </Text>
 
           <Form method="post">
-            <input type="hidden" name="alpha" value={alpha} />
-            <input type="hidden" name="z" value={zLevel.z} />
-            <input type="hidden" name="leadTime" value={leadTime} />
-            <input type="hidden" name="syncFrequency" value={syncFreq} />
-            <s-button variant="primary" type="submit">
-              {t("settings.save")}
-            </s-button>
+            <BlockStack gap="500">
+              <InlineGrid columns={{ xs: 1, md: 2 }} gap="400">
+                <RangeSlider
+                  label={t("settings.ewmaAlpha")}
+                  value={alpha}
+                  onChange={(v) => setAlpha(Number(v))}
+                  min={0.05}
+                  max={0.95}
+                  step={0.05}
+                  output
+                  helpText={`α = ${alpha.toFixed(2)}`}
+                />
+                <RangeSlider
+                  label={t("settings.serviceLevel")}
+                  value={zIndex}
+                  onChange={(v) => setZIndex(Number(v))}
+                  min={0}
+                  max={3}
+                  step={1}
+                  output
+                  helpText={`Z = ${zLevel.z} (${zLevel.label})`}
+                />
+              </InlineGrid>
+
+              <Divider />
+
+              <InlineGrid columns={{ xs: 1, md: 2 }} gap="400">
+                <TextField
+                  label={t("settings.defaultLeadTime")}
+                  value={leadTime}
+                  onChange={setLeadTime}
+                  type="number"
+                  min={1}
+                  autoComplete="off"
+                />
+                <Select
+                  label={t("settings.syncFrequency")}
+                  options={syncOptions}
+                  value={String(syncFreq)}
+                  onChange={(v) => setSyncFreq(Number(v))}
+                />
+              </InlineGrid>
+
+              <Divider />
+
+              <InlineGrid columns={{ xs: 1, md: 2 }} gap="400">
+                <Select
+                  label={t("settings.language")}
+                  options={languageOptions}
+                  value={i18n.language}
+                  onChange={setLanguage}
+                />
+              </InlineGrid>
+
+              <input type="hidden" name="alpha" value={alpha} />
+              <input type="hidden" name="z" value={zLevel.z} />
+              <input type="hidden" name="leadTime" value={leadTime} />
+              <input type="hidden" name="syncFrequency" value={syncFreq} />
+
+              <InlineGrid columns={1}>
+                <Button
+                  variant="primary"
+                  submit
+                  disabled={!hasChanges || isSubmitting}
+                  loading={isSubmitting}
+                >
+                  {t("settings.save")}
+                </Button>
+              </InlineGrid>
+            </BlockStack>
           </Form>
-        </s-stack>
-      </s-section>
-    </s-page>
+        </BlockStack>
+      </Card>
+    </Page>
   );
 }
 
