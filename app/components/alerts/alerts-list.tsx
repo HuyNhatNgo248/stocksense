@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useFetcher } from "react-router";
 import {
   ActionList,
   Badge,
@@ -9,10 +10,12 @@ import {
   Box,
   Button,
   Card,
+  DatePicker,
   IndexFilters,
   IndexFiltersMode,
   InlineGrid,
   InlineStack,
+  Modal,
   Popover,
   SkeletonBodyText,
   SkeletonDisplayText,
@@ -22,6 +25,7 @@ import {
   useSetIndexFiltersMode,
 } from "@shopify/polaris";
 import {
+  CalendarIcon,
   ClockIcon,
   EditIcon,
   ExternalIcon,
@@ -47,29 +51,146 @@ function showToast(message: string) {
   (window as any).shopify?.toast.show(message, { duration: 2500 });
 }
 
-function AlertCardActions({ forecast }: { forecast: Forecast }) {
-  const { t } = useTranslation();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const { product } = forecast;
+function isoToDate(iso: string): Date {
+  // Expected format is YYYY-MM-DD (per API). Parse as local midnight to avoid TZ drift.
+  // Fall back to native Date parsing for any other ISO shape.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    return new Date(`${iso}T00:00:00`);
+  }
+  return new Date(iso);
+}
 
-  const productId = extractNumericId(product.shopifyProductId);
-  const variantId = extractNumericId(product.shopifyVariantId);
-  const shopifyUrl = `shopify:admin/products/${productId}${
-    variantId ? `/variants/${variantId}` : ""
+function formatArrivalDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const date = isoToDate(iso);
+  if (isNaN(date.getTime())) return iso;
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+function dateToISO(d: Date): string {
+  if (isNaN(d.getTime())) return "";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function todayPlusDays(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return dateToISO(d);
+}
+
+function startOfToday(): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function AlertCardActions({
+  forecast,
+  expectedArrival,
+  onMarkedChange,
+}: {
+  forecast: Forecast;
+  expectedArrival: string | null;
+  onMarkedChange: (date: string | null) => void;
+}) {
+  const { t } = useTranslation();
+  const fetcher = useFetcher<{ success: boolean }>();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editDateOpen, setEditDateOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(() => startOfToday());
+  const [{ month, year }, setMonth] = useState(() => {
+    const d = startOfToday();
+    return { month: d.getMonth(), year: d.getFullYear() };
+  });
+
+  const { product } = forecast;
+  const variantId = product.shopifyVariantId;
+  const productNumId = extractNumericId(product.shopifyProductId);
+  const variantNumId = extractNumericId(variantId);
+  const shopifyUrl = `shopify:admin/products/${productNumId}${
+    variantNumId ? `/variants/${variantNumId}` : ""
   }`;
 
+  const isMarked = !!expectedArrival;
+  const isSubmitting = fetcher.state === "submitting";
+
+  function submitMark(date: string) {
+    onMarkedChange(date);
+    fetcher.submit(
+      { intent: "mark", variantId, expectedArrivalDate: date },
+      {
+        method: "post",
+        action: "/app/mark-ordered",
+        encType: "application/json",
+      },
+    );
+  }
+
+  function submitUnmark() {
+    onMarkedChange(null);
+    fetcher.submit(
+      { intent: "unmark", variantId },
+      {
+        method: "post",
+        action: "/app/mark-ordered",
+        encType: "application/json",
+      },
+    );
+  }
+
   function handleMarkOrdered() {
-    // TODO: POST /app/alert/mark-ordered
-    //   body: { variantId, expectedArrival: today + leadTimeDays }
+    const days = product.leadTimeDays > 0 ? product.leadTimeDays : 7;
+    const iso = todayPlusDays(days);
+    submitMark(iso);
     showToast(
       t("alerts.actions.markedOrdered", {
-        defaultValue: "Marked as ordered (pending API)",
+        defaultValue: `Marked as ordered · arriving ${formatArrivalDate(iso)}`,
+        date: formatArrivalDate(iso),
+      }),
+    );
+  }
+
+  function handleUnmark() {
+    submitUnmark();
+    setMenuOpen(false);
+    showToast(
+      t("alerts.actions.unmarked", {
+        defaultValue: "Removed from ordered",
+      }),
+    );
+  }
+
+  function handleOpenEditDate() {
+    const initialIso =
+      expectedArrival ?? todayPlusDays(product.leadTimeDays || 7);
+    const parsed = isoToDate(initialIso);
+    const initial = isNaN(parsed.getTime()) ? startOfToday() : parsed;
+    setSelectedDate(initial);
+    setMonth({ month: initial.getMonth(), year: initial.getFullYear() });
+    setEditDateOpen(true);
+    setMenuOpen(false);
+  }
+
+  function handleSaveDate() {
+    const iso = dateToISO(selectedDate);
+    submitMark(iso);
+    setEditDateOpen(false);
+    showToast(
+      t("alerts.actions.dateUpdated", {
+        defaultValue: `Arrival date updated to ${formatArrivalDate(iso)}`,
+        date: formatArrivalDate(iso),
       }),
     );
   }
 
   function handleSnooze() {
-    // TODO: POST /app/alert/snooze  body: { variantId, days: 7 }
     showToast(
       t("alerts.actions.snoozed", {
         defaultValue: "Snoozed for 7 days (pending API)",
@@ -79,7 +200,6 @@ function AlertCardActions({ forecast }: { forecast: Forecast }) {
   }
 
   function handleUpdateLeadTime() {
-    // TODO: open a lead-time editor (modal) wired to /app/update-lead-time
     showToast(
       t("alerts.actions.updateLeadTime", {
         defaultValue: "Open lead time editor (TODO)",
@@ -88,52 +208,116 @@ function AlertCardActions({ forecast }: { forecast: Forecast }) {
     setMenuOpen(false);
   }
 
+  const menuItems = isMarked
+    ? [
+        {
+          content: t("alerts.actions.editArrival", {
+            defaultValue: "Edit arrival date",
+          }),
+          icon: CalendarIcon,
+          onAction: handleOpenEditDate,
+        },
+        {
+          content: t("alerts.actions.viewOnShopify", {
+            defaultValue: "View on Shopify",
+          }),
+          icon: ExternalIcon,
+          url: shopifyUrl,
+        },
+      ]
+    : [
+        {
+          content: t("alerts.actions.snooze7Days", {
+            defaultValue: "Snooze 7 days",
+          }),
+          icon: ClockIcon,
+          onAction: handleSnooze,
+        },
+        {
+          content: t("alerts.actions.updateLeadTime", {
+            defaultValue: "Update lead time",
+          }),
+          icon: EditIcon,
+          onAction: handleUpdateLeadTime,
+        },
+        {
+          content: t("alerts.actions.viewOnShopify", {
+            defaultValue: "View on Shopify",
+          }),
+          icon: ExternalIcon,
+          url: shopifyUrl,
+        },
+      ];
+
   return (
-    <InlineStack gap="200" wrap={false}>
-      <Button onClick={handleMarkOrdered}>
-        {t("alerts.actions.markOrdered", { defaultValue: "Mark as ordered" })}
-      </Button>
-      <Popover
-        active={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        activator={
-          <Button
-            icon={MenuHorizontalIcon}
-            accessibilityLabel={t("alerts.actions.more", {
-              defaultValue: "More actions",
+    <>
+      <InlineStack gap="200" wrap={false}>
+        {isMarked ? (
+          <Button onClick={handleUnmark} loading={isSubmitting}>
+            {t("alerts.actions.unmark", { defaultValue: "Unmark" })}
+          </Button>
+        ) : (
+          <Button onClick={handleMarkOrdered} loading={isSubmitting}>
+            {t("alerts.actions.markOrdered", {
+              defaultValue: "Mark as ordered",
             })}
-            onClick={() => setMenuOpen((v) => !v)}
-          />
-        }
+          </Button>
+        )}
+        <Popover
+          active={menuOpen}
+          onClose={() => setMenuOpen(false)}
+          activator={
+            <Button
+              icon={MenuHorizontalIcon}
+              accessibilityLabel={t("alerts.actions.more", {
+                defaultValue: "More actions",
+              })}
+              onClick={() => setMenuOpen((v) => !v)}
+            />
+          }
+        >
+          <ActionList actionRole="menuitem" items={menuItems} />
+        </Popover>
+      </InlineStack>
+
+      <Modal
+        open={editDateOpen}
+        onClose={() => setEditDateOpen(false)}
+        title={t("alerts.actions.editArrival", {
+          defaultValue: "Edit arrival date",
+        })}
+        primaryAction={{
+          content: t("common.save", { defaultValue: "Save" }),
+          onAction: handleSaveDate,
+          loading: isSubmitting,
+        }}
+        secondaryActions={[
+          {
+            content: t("common.cancel", { defaultValue: "Cancel" }),
+            onAction: () => setEditDateOpen(false),
+          },
+        ]}
       >
-        <ActionList
-          actionRole="menuitem"
-          items={[
-            {
-              content: t("alerts.actions.snooze7Days", {
-                defaultValue: "Snooze 7 days",
-              }),
-              icon: ClockIcon,
-              onAction: handleSnooze,
-            },
-            {
-              content: t("alerts.actions.updateLeadTime", {
-                defaultValue: "Update lead time",
-              }),
-              icon: EditIcon,
-              onAction: handleUpdateLeadTime,
-            },
-            {
-              content: t("alerts.actions.viewOnShopify", {
-                defaultValue: "View on Shopify",
-              }),
-              icon: ExternalIcon,
-              url: shopifyUrl,
-            },
-          ]}
-        />
-      </Popover>
-    </InlineStack>
+        <Modal.Section>
+          <BlockStack gap="300">
+            <DatePicker
+              month={month}
+              year={year}
+              selected={selectedDate}
+              onChange={({ start }) => setSelectedDate(start)}
+              onMonthChange={(m, y) => setMonth({ month: m, year: y })}
+              disableDatesBefore={startOfToday()}
+            />
+            <Text as="p" tone="subdued" variant="bodySm">
+              {t("alerts.actions.arrivingOn", {
+                defaultValue: `Arriving ${formatArrivalDate(dateToISO(selectedDate))}`,
+                date: formatArrivalDate(dateToISO(selectedDate)),
+              })}
+            </Text>
+          </BlockStack>
+        </Modal.Section>
+      </Modal>
+    </>
   );
 }
 
@@ -187,95 +371,123 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
     product.shopifyVariantId,
   );
 
+  // undefined = use server value; null = unmarked locally; string = marked locally
+  const [localExpectedArrival, setLocalExpectedArrival] = useState<
+    string | null | undefined
+  >(undefined);
+
+  const expectedArrival =
+    localExpectedArrival !== undefined
+      ? localExpectedArrival
+      : (forecast.markOrdered?.expectedArrivalDate ?? null);
+  const isMarkedOrdered = !!expectedArrival;
+
   const daysLeft = Math.max(0, Math.floor(forecast.daysOfStockRemaining));
   const safetyStock = Math.round(forecast.safetyStock);
   const suggestedOrder =
     Math.round(forecast.velocityPerDay * product.leadTimeDays) + safetyStock;
 
   const statusBadgeTone = isCritical ? "critical" : "warning";
-  const metricsBg = isCritical ? "bg-surface-critical" : "bg-surface-caution";
+  const metricsBg = isMarkedOrdered
+    ? "bg-surface-secondary"
+    : isCritical
+      ? "bg-surface-critical"
+      : "bg-surface-caution";
 
   return (
     <Card padding="0">
-        <Box padding="400">
-          <InlineStack gap="400" wrap={false} blockAlign="start">
-            {imageLoading ? (
-              <SkeletonThumbnail size="large" />
-            ) : imageUrl ? (
-              <Thumbnail size="large" source={imageUrl} alt={product.title} />
-            ) : (
-              <SkeletonThumbnail size="large" />
-            )}
-            <Box minWidth="0" width="100%">
-              <InlineStack
-                align="space-between"
-                blockAlign="start"
-                gap="200"
-                wrap={false}
-              >
-                <Box minWidth="0">
-                  <BlockStack gap="100">
-                    <ProductVariantLink
-                      shopifyProductId={product.shopifyProductId}
-                      shopifyVariantId={product.shopifyVariantId}
-                    >
-                      <Text as="h3" variant="headingMd" truncate>
-                        {product.title}
-                      </Text>
-                    </ProductVariantLink>
-                    <Text as="span" tone="subdued" variant="bodySm" truncate>
-                      SKU: {product.sku}
-                      {"  ·  "}
-                      {t("alerts.card.reorderPoint")}:{" "}
-                      {t("alerts.card.units", {
-                        n: Math.round(forecast.reorderPoint),
-                      })}
-                      {"  ·  "}
-                      {t("alerts.card.leadTime")}:{" "}
-                      {t("alerts.card.days", { n: product.leadTimeDays })}
+      <Box padding="400">
+        <InlineStack gap="400" wrap={false} blockAlign="start">
+          {imageLoading ? (
+            <SkeletonThumbnail size="large" />
+          ) : imageUrl ? (
+            <Thumbnail size="large" source={imageUrl} alt={product.title} />
+          ) : (
+            <SkeletonThumbnail size="large" />
+          )}
+          <Box minWidth="0" width="100%">
+            <InlineStack
+              align="space-between"
+              blockAlign="start"
+              gap="200"
+              wrap={false}
+            >
+              <Box minWidth="0">
+                <BlockStack gap="100">
+                  <ProductVariantLink
+                    shopifyProductId={product.shopifyProductId}
+                    shopifyVariantId={product.shopifyVariantId}
+                  >
+                    <Text as="h3" variant="headingMd" truncate>
+                      {product.title}
                     </Text>
-                    <InlineStack>
+                  </ProductVariantLink>
+                  <Text as="span" tone="subdued" variant="bodySm" truncate>
+                    SKU: {product.sku}
+                    {"  ·  "}
+                    {t("alerts.card.reorderPoint")}:{" "}
+                    {t("alerts.card.units", {
+                      n: Math.round(forecast.reorderPoint),
+                    })}
+                    {"  ·  "}
+                    {t("alerts.card.leadTime")}:{" "}
+                    {t("alerts.card.days", { n: product.leadTimeDays })}
+                  </Text>
+                  <InlineStack>
+                    {isMarkedOrdered ? (
+                      <Badge tone="success">
+                        {t("alerts.card.orderedArriving", {
+                          defaultValue: `Ordered · arriving ${formatArrivalDate(expectedArrival!)}`,
+                          date: formatArrivalDate(expectedArrival!),
+                        })}
+                      </Badge>
+                    ) : (
                       <Badge tone={statusBadgeTone}>
                         {isCritical
                           ? t("alerts.card.outOfStock")
                           : t("alerts.card.reorderSoon")}
                       </Badge>
-                    </InlineStack>
-                  </BlockStack>
-                </Box>
-                <AlertCardActions forecast={forecast} />
-              </InlineStack>
-            </Box>
-          </InlineStack>
-        </Box>
+                    )}
+                  </InlineStack>
+                </BlockStack>
+              </Box>
+              <AlertCardActions
+                forecast={forecast}
+                expectedArrival={expectedArrival}
+                onMarkedChange={setLocalExpectedArrival}
+              />
+            </InlineStack>
+          </Box>
+        </InlineStack>
+      </Box>
 
-        <Box
-          padding="400"
-          background={metricsBg}
-          borderBlockStartWidth="025"
-          borderColor="border"
-        >
-          <InlineGrid columns={{ xs: 1, sm: 3 }} gap="400">
-            <MetricBlock label={t("alerts.card.currentStock")}>
-              <Text as="p" variant="headingLg" fontWeight="bold">
-                {t("alerts.card.units", { n: product.currentStock })}
-              </Text>
-            </MetricBlock>
-            <MetricBlock label={t("alerts.card.stockout")}>
-              <Text as="p" variant="headingLg" fontWeight="bold">
-                {daysLeft === 0
-                  ? t("alerts.card.now")
-                  : t("alerts.card.days", { n: daysLeft })}
-              </Text>
-            </MetricBlock>
-            <MetricBlock label={t("alerts.card.suggestedOrder")}>
-              <Text as="p" variant="headingLg" fontWeight="bold">
-                {t("alerts.card.units", { n: suggestedOrder })}
-              </Text>
-            </MetricBlock>
-          </InlineGrid>
-        </Box>
-      </Card>
+      <Box
+        padding="400"
+        background={metricsBg}
+        borderBlockStartWidth="025"
+        borderColor="border"
+      >
+        <InlineGrid columns={{ xs: 1, sm: 3 }} gap="400">
+          <MetricBlock label={t("alerts.card.currentStock")}>
+            <Text as="p" variant="headingLg" fontWeight="bold">
+              {t("alerts.card.units", { n: product.currentStock })}
+            </Text>
+          </MetricBlock>
+          <MetricBlock label={t("alerts.card.stockout")}>
+            <Text as="p" variant="headingLg" fontWeight="bold">
+              {daysLeft === 0
+                ? t("alerts.card.now")
+                : t("alerts.card.days", { n: daysLeft })}
+            </Text>
+          </MetricBlock>
+          <MetricBlock label={t("alerts.card.suggestedOrder")}>
+            <Text as="p" variant="headingLg" fontWeight="bold">
+              {t("alerts.card.units", { n: suggestedOrder })}
+            </Text>
+          </MetricBlock>
+        </InlineGrid>
+      </Box>
+    </Card>
   );
 }
 

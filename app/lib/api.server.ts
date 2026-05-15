@@ -46,6 +46,23 @@ function createApiClient({ shop, accessToken }: ApiClientOptions) {
     return res.json() as Promise<T>;
   }
 
+  async function putNoBody(path: string, body: unknown): Promise<void> {
+    const res = await fetch(`${BASE_URL}${path}`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`API error ${res.status}: ${path}`);
+  }
+
+  async function del(path: string): Promise<void> {
+    const res = await fetch(`${BASE_URL}${path}`, {
+      method: "DELETE",
+      headers,
+    });
+    if (!res.ok) throw new Error(`API error ${res.status}: ${path}`);
+  }
+
   return {
     inventory: {
       updateSettings: (variantId: string, data: { leadTimeDays: number }) =>
@@ -89,6 +106,12 @@ function createApiClient({ shop, accessToken }: ApiClientOptions) {
       metrics: () => get<ForecastMetrics>("/api/forecasts/metrics"),
       velocityHistory: (variantId: string) =>
         get<VelocityHistory>(`/api/forecasts/${variantId}/velocity-history`),
+      markOrdered: (variantId: string, expectedArrivalDate: string) =>
+        putNoBody(`/api/forecasts/${variantId}/mark-ordered`, {
+          expectedArrivalDate,
+        }),
+      unmarkOrdered: (variantId: string) =>
+        del(`/api/forecasts/${variantId}/mark-ordered`),
     },
   };
 }

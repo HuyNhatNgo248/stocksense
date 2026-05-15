@@ -37,6 +37,11 @@ export interface Forecast {
   calculatedAt: string;
   updatedAt: string;
   product: ForecastProduct;
+  expectedArrivalDate?: string | null;
+  markOrdered: {
+    expectedArrivalDate: string;
+    snoozedAt: string;
+  } | null;
 }
 
 export interface ForecastListResponse {
