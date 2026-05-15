@@ -1,6 +1,10 @@
 import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
-import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
+import type {
+  HeadersFunction,
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction,
+} from "react-router";
 import { Await, useLoaderData } from "react-router";
 import { Page } from "@shopify/polaris";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
@@ -54,6 +58,15 @@ export default function AlertsPage() {
 export function ErrorBoundary() {
   return <AppErrorBoundary heading="Alerts" />;
 }
+
+export const shouldRevalidate: ShouldRevalidateFunction = ({
+  formAction,
+  defaultShouldRevalidate,
+}) => {
+  if (formAction === "/app/velocity-history") return false;
+  if (formAction === "/app/mark-ordered") return false;
+  return defaultShouldRevalidate;
+};
 
 export const headers: HeadersFunction = (headersArgs) => {
   return boundary.headers(headersArgs);

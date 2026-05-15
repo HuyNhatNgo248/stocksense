@@ -15,6 +15,7 @@ import {
   IndexFiltersMode,
   InlineGrid,
   InlineStack,
+  Link,
   Modal,
   Popover,
   SkeletonBodyText,
@@ -39,7 +40,7 @@ import type {
   ForecastStatus,
 } from "@/types/api";
 import { useVariantImage } from "@/hooks/use-variant-image";
-import { ProductVariantLink } from "@/components/product-variant-link";
+import { ProductDetailPanel } from "@/components/dashboard/product-detail-panel";
 
 function extractNumericId(gid?: string | null): string | null {
   if (!gid) return null;
@@ -363,7 +364,13 @@ function MetricBlock({
   );
 }
 
-function AlertCard({ forecast }: { forecast: Forecast }) {
+function AlertCard({
+  forecast,
+  onSelect,
+}: {
+  forecast: Forecast;
+  onSelect: (forecast: Forecast) => void;
+}) {
   const { t } = useTranslation();
   const { product } = forecast;
   const isCritical = forecast.status === "CRITICAL";
@@ -414,14 +421,11 @@ function AlertCard({ forecast }: { forecast: Forecast }) {
             >
               <Box minWidth="0">
                 <BlockStack gap="100">
-                  <ProductVariantLink
-                    shopifyProductId={product.shopifyProductId}
-                    shopifyVariantId={product.shopifyVariantId}
-                  >
+                  <Link onClick={() => onSelect(forecast)} removeUnderline>
                     <Text as="h3" variant="headingMd" truncate>
                       {product.title}
                     </Text>
-                  </ProductVariantLink>
+                  </Link>
                   <Text as="span" tone="subdued" variant="bodySm" truncate>
                     SKU: {product.sku}
                     {"  ·  "}
@@ -498,6 +502,7 @@ function AlertSection({
   initial,
   emptyMessage,
   search,
+  onSelect,
 }: {
   title: string;
   tone: "critical" | "warning";
@@ -505,6 +510,7 @@ function AlertSection({
   initial: ForecastListResponse;
   emptyMessage: string;
   search: string;
+  onSelect: (forecast: Forecast) => void;
 }) {
   const { t } = useTranslation();
   const [forecasts, setForecasts] = useState<Forecast[]>(initial.data);
@@ -568,7 +574,7 @@ function AlertSection({
       ) : (
         <BlockStack gap="300">
           {forecasts.map((f) => (
-            <AlertCard key={f.id} forecast={f} />
+            <AlertCard key={f.id} forecast={f} onSelect={onSelect} />
           ))}
           {hasMore && (
             <InlineStack align="center">
@@ -599,6 +605,9 @@ export function AlertsList({ critical, reorder }: AlertsListProps) {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<FilterValue>("all");
   const [search, setSearch] = useState("");
+  const [selectedForecast, setSelectedForecast] = useState<Forecast | null>(
+    null,
+  );
   const { mode, setMode } = useSetIndexFiltersMode();
 
   const tabs = FILTER_TABS.map((f, index) => ({
@@ -636,26 +645,66 @@ export function AlertsList({ critical, reorder }: AlertsListProps) {
         />
       </Card>
 
-      {filter !== "reorder" && (
-        <AlertSection
-          title={t("alerts.criticalSection")}
-          tone="critical"
-          status="CRITICAL"
-          initial={critical}
-          emptyMessage={t("alerts.noCritical")}
-          search={search}
-        />
-      )}
-      {filter !== "critical" && (
-        <AlertSection
-          title={t("alerts.reorderSection")}
-          tone="warning"
-          status="REORDER"
-          initial={reorder}
-          emptyMessage={t("alerts.noReorder")}
-          search={search}
-        />
-      )}
+      <div
+        style={{
+          display: "flex",
+          gap: 16,
+          alignItems: "flex-start",
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <BlockStack gap="500">
+            {filter !== "reorder" && (
+              <AlertSection
+                title={t("alerts.criticalSection")}
+                tone="critical"
+                status="CRITICAL"
+                initial={critical}
+                emptyMessage={t("alerts.noCritical")}
+                search={search}
+                onSelect={setSelectedForecast}
+              />
+            )}
+            {filter !== "critical" && (
+              <AlertSection
+                title={t("alerts.reorderSection")}
+                tone="warning"
+                status="REORDER"
+                initial={reorder}
+                emptyMessage={t("alerts.noReorder")}
+                search={search}
+                onSelect={setSelectedForecast}
+              />
+            )}
+          </BlockStack>
+        </div>
+        <div
+          style={{
+            width: selectedForecast ? 320 : 0,
+            flexShrink: 0,
+            overflow: "hidden",
+            transition: "width 300ms ease-in-out",
+            position: "sticky",
+            top: 0,
+            alignSelf: "flex-start",
+          }}
+        >
+          {selectedForecast && (
+            <div
+              style={{
+                width: 320,
+                maxHeight: "100vh",
+                overflowY: "auto",
+              }}
+            >
+              <ProductDetailPanel
+                forecast={selectedForecast}
+                onClose={() => setSelectedForecast(null)}
+              />
+            </div>
+          )}
+        </div>
+      </div>
     </BlockStack>
   );
 }
