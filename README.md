@@ -10,7 +10,9 @@ A Shopify app that prevents stockouts through statistical inventory forecasting.
 - **Dashboard** — Inventory table with live status badges (OK / REORDER / CRITICAL), quick stats summary, and a product detail panel with velocity history charts
 - **Alerts** — Dedicated view of all CRITICAL and REORDER SKUs with search and pagination
 - **Per-product lead times** — Override the default supplier lead time on individual variants
-- **Settings** — Tune EWMA smoothing factor (α), service level z-score, and default lead time to match your business
+- **Suggested order quantity** — Each alert recommends how many units to reorder using an (s, S) order-up-to policy that covers lead time + a configurable review period
+- **Settings** — Tune EWMA smoothing factor (α), service level z-score, default lead time, and review period to match your business
+- **Email alerts** — Opt-in email notifications when SKUs cross critical or reorder thresholds
 - **How it works** — In-app explanation of the forecasting model
 
 ## How the forecasting works
@@ -22,8 +24,9 @@ StockSense runs a three-step pipeline per SKU:
 | Sales velocity | `V_t = α·S_t + (1-α)·V_{t-1}` | units/day |
 | Reorder point | `ROP = V·L + Z·σ·√L` | units |
 | Status | `stock ≤ SS → CRITICAL`, `stock ≤ ROP → REORDER` | — |
+| Suggested order | `Q = max(0, V·(L+R) + SS − stock)` | units |
 
-**Defaults:** α = 0.3 · Z = 1.645 (95% service level). See [`docs/stocksense-concepts.md`](docs/stocksense-concepts.md) for the full mathematical reference.
+**Defaults:** α = 0.3 · Z = 1.645 (95% service level) · R = 30 days (review period). See [`docs/stocksense-concepts.md`](docs/stocksense-concepts.md) for the full mathematical reference.
 
 ## Tech stack
 

@@ -75,6 +75,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       defaultServiceLevelZ: Number(form.get("z")),
       defaultLeadTimeDays: Number(form.get("leadTime")),
       syncFrequencyHours: Number(form.get("syncFrequency")),
+      reviewPeriodDays: Number(form.get("reviewPeriod")),
     });
 
     const alertsPayload: { alertsEnabled: boolean; alertEmail?: string } = {
@@ -104,6 +105,9 @@ export default function Settings() {
     String(settings.defaultLeadTimeDays),
   );
   const [syncFreq, setSyncFreq] = useState(settings.syncFrequencyHours);
+  const [reviewPeriod, setReviewPeriod] = useState(
+    String(settings.reviewPeriodDays),
+  );
   const [alertsEnabled, setAlertsEnabled] = useState(alerts.alertsEnabled);
   const [alertEmail, setAlertEmail] = useState(alerts.alertEmail ?? "");
   const zLevel = Z_LEVELS[zIndex];
@@ -114,6 +118,7 @@ export default function Settings() {
     zLevel.z !== settings.defaultServiceLevelZ ||
     Number(leadTime) !== settings.defaultLeadTimeDays ||
     syncFreq !== settings.syncFrequencyHours ||
+    Number(reviewPeriod) !== settings.reviewPeriodDays ||
     alertsEnabled !== alerts.alertsEnabled ||
     alertEmail !== (alerts.alertEmail ?? "");
 
@@ -199,6 +204,25 @@ export default function Settings() {
               <Divider />
 
               <InlineGrid columns={{ xs: 1, md: 2 }} gap="400">
+                <TextField
+                  label={t("settings.reviewPeriod", {
+                    defaultValue: "Review period (days)",
+                  })}
+                  value={reviewPeriod}
+                  onChange={setReviewPeriod}
+                  type="number"
+                  min={1}
+                  autoComplete="off"
+                  helpText={t("settings.reviewPeriodHelp", {
+                    defaultValue:
+                      "How often you plan to reorder. Drives the suggested order quantity on alerts.",
+                  })}
+                />
+              </InlineGrid>
+
+              <Divider />
+
+              <InlineGrid columns={{ xs: 1, md: 2 }} gap="400">
                 <Select
                   label={t("settings.language")}
                   options={languageOptions}
@@ -256,6 +280,7 @@ export default function Settings() {
           <input type="hidden" name="z" value={zLevel.z} />
           <input type="hidden" name="leadTime" value={leadTime} />
           <input type="hidden" name="syncFrequency" value={syncFreq} />
+          <input type="hidden" name="reviewPeriod" value={reviewPeriod} />
           <input
             type="hidden"
             name="alertsEnabled"

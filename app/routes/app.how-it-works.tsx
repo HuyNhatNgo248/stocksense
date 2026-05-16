@@ -32,6 +32,11 @@ export default function HowItWorks() {
             rows={[
               [<Code key="alpha">α (alpha)</Code>, "0.3", "EWMA smoothing factor"],
               [<Code key="z">Z</Code>, "1.645", "Service level z-score (95%)"],
+              [
+                <Code key="r">R (review_period)</Code>,
+                "30 days",
+                "How often you plan to reorder",
+              ],
             ]}
           />
         </Section>
@@ -162,6 +167,43 @@ export default function HowItWorks() {
           </Insight>
         </Section>
 
+        <Section
+          title={t("howItWorks.sections.suggestedOrder", {
+            defaultValue: "Suggested Order Quantity",
+          })}
+          badge="units"
+        >
+          <Text as="p">
+            How many units to actually order when an alert fires. Uses an
+            (s, S) order-up-to policy: order enough now so that stock returns
+            to a sensible level after the shipment arrives and lasts through
+            one full review period.
+          </Text>
+          <Formula>
+            Q = max(0, V × (lead_time + review_period) + SS − current_stock)
+          </Formula>
+          <VariableList
+            rows={[
+              ["V × lead_time", "Demand while waiting for the order to arrive"],
+              [
+                "V × review_period",
+                "Demand until you'll place the next order (configurable in Settings)",
+              ],
+              ["SS", "Safety stock buffer to maintain at all times"],
+              [
+                "− current_stock",
+                "You already have this on hand; only order the gap",
+              ],
+            ]}
+          />
+          <Insight>
+            With review_period = 30 days, a freshly arrived order should last
+            roughly a month before the next reorder fires. Shorten it to order
+            more often in smaller quantities, lengthen it to consolidate orders
+            and reduce ordering overhead.
+          </Insight>
+        </Section>
+
         <Section title={t("howItWorks.sections.status")}>
           <Text as="p">
             Every SKU is assigned one of three statuses based on where current
@@ -214,6 +256,11 @@ export default function HowItWorks() {
               ["Safety stock", <Code key="r3">Z × σ × √L</Code>, "units"],
               ["Cycle stock", <Code key="r4">V × L</Code>, "units"],
               ["Reorder point", <Code key="r5">V·L + Z·σ·√L</Code>, "units"],
+              [
+                "Suggested order",
+                <Code key="r5a">max(0, V·(L+R) + SS − stock)</Code>,
+                "units",
+              ],
               ["CRITICAL", <Code key="r6">stock ≤ SS</Code>, "—"],
               ["REORDER", <Code key="r7">SS &lt; stock ≤ ROP</Code>, "—"],
               ["OK", <Code key="r8">stock &gt; ROP</Code>, "—"],

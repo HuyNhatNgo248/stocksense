@@ -10,6 +10,7 @@ This document defines every mathematical concept used in StockSense. Use it as t
 | --- | --- | --- |
 | `α` (alpha) | per-product (auto-tuned 0.1–0.5, fallback 0.3) | EWMA smoothing factor |
 | `Z` | `1.645` | Service level z-score (95%) |
+| `R` (review_period) | `30` days (configurable) | How often the merchant plans to reorder; drives suggested order quantity |
 | Lookback window | `180 days` | Sales history used for all calculations |
 
 ---
@@ -166,6 +167,58 @@ ROP = CS + SS
 
 ---
 
+## 6a. Suggested Order Quantity (Order-up-to / (s, S) policy)
+
+**What it is:** When an alert fires (status is `CRITICAL` or `REORDER`), this is how many units the merchant should actually order — not just the threshold (ROP), but the quantity that brings inventory back to a sensible target after the shipment arrives.
+
+**Formula:**
+
+```text
+target_stock     = V × (lead_time + review_period) + SS
+suggested_order  = max(0, target_stock - current_stock)
+```
+
+**Components:**
+
+- `V × lead_time` — demand while waiting for the order to arrive
+- `V × review_period` — demand until the next reorder is placed
+- `SS` — safety stock buffer to maintain at all times
+- `− current_stock` — already on hand, only order the gap
+
+**How it works:**
+
+1. Compute `target_stock` — the level we want to "order up to" so post-arrival inventory lasts through `review_period` plus keeps a safety buffer.
+2. Subtract what's already on the shelf so we only order the missing amount.
+3. Clamp at zero — if current stock already exceeds the target, no order is suggested.
+
+**Worked example:** `V = 5 units/day`, `L = 7 days`, `R = 30 days`, `SS = 12`, `current_stock = 30`.
+
+- `target_stock = 5 × (7 + 30) + 12 = 197`
+- `suggested_order = max(0, 197 − 30) = 167 units`
+- 7 days later, ~35 units sell during lead time → on-hand becomes `30 − 35 + 167 = 162`
+- That ~162-unit level then drains at 5/day → hits ROP (`47`) ~23 days later
+- Total cycle ≈ 7 (lead) + 23 (runway) = 30 days ✓ — matches the configured review period
+
+**TypeScript utility:**
+
+```ts
+export function suggestedOrderQty(
+  velocity: number,
+  leadTimeDays: number,
+  reviewPeriodDays: number,
+  safetyStock: number,
+  currentStock: number,
+): number {
+  const targetStock =
+    velocity * (leadTimeDays + reviewPeriodDays) + safetyStock;
+  return Math.max(0, Math.round(targetStock - currentStock));
+}
+```
+
+**Tuning `review_period`:** shorter = more frequent, smaller orders (lower carrying cost, more ordering overhead). Longer = fewer, larger orders (lower ordering overhead, higher carrying cost). 30 days is the default; merchants can override in Settings.
+
+---
+
 ## 7. Inventory Status Classification
 
 **What it is:** A three-tier signal assigned to every SKU based on where current stock sits relative to safety stock and ROP.
@@ -257,9 +310,10 @@ Shopify sales data (S_t, 180-day window)
 | Safety stock | `Z × σ × √L` | units |
 | Cycle stock | `Σ V × dow_mult[d]` over lead time | units |
 | Reorder point | `CS + SS` | units |
+| Suggested order | `max(0, V·(L+R) + SS − stock)` | units |
 | CRITICAL | `stock ≤ SS` | — |
 | REORDER | `SS < stock ≤ ROP` | — |
 | OK | `stock > ROP` | — |
 | Accuracy | `max(0, (1 - MAPE) × 100)` | 0–100 |
 
-**Defaults:** Z = 1.645 (95% service level) · Lookback = 180 days · Alpha fallback = 0.3
+**Defaults:** Z = 1.645 (95% service level) · Lookback = 180 days · Alpha fallback = 0.3 · R = 30 days (review period)

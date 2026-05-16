@@ -67,6 +67,7 @@ export interface AppSettings {
   defaultLeadTimeDays: number;
   defaultServiceLevelZ: number;
   syncFrequencyHours: number;
+  reviewPeriodDays: number;
   updatedAt: string;
 }
 

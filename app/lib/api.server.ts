@@ -79,6 +79,7 @@ function createApiClient({ shop, accessToken }: ApiClientOptions) {
             | "defaultLeadTimeDays"
             | "defaultServiceLevelZ"
             | "syncFrequencyHours"
+            | "reviewPeriodDays"
           >
         >,
       ) => put<AppSettings>("/api/settings", data),

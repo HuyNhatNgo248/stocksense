@@ -28,6 +28,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     accessToken: session.accessToken ?? "",
   });
 
+  const settings = await api.settings.get();
+
   return {
     critical: api.forecasts.list({
       page: 1,
@@ -39,11 +41,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       limit: PAGE_LIMIT,
       status: "REORDER",
     }),
+    reviewPeriodDays: settings.reviewPeriodDays,
   };
 };
 
 export default function AlertsPage() {
-  const { critical, reorder } = useLoaderData<typeof loader>();
+  const { critical, reorder, reviewPeriodDays } =
+    useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const [selectedForecast, setSelectedForecast] = useState<Forecast | null>(
     null,
@@ -73,6 +77,7 @@ export default function AlertsPage() {
                   reorder={r}
                   selectedId={selectedForecast?.id}
                   onSelect={setSelectedForecast}
+                  reviewPeriodDays={reviewPeriodDays}
                 />
               )}
             </Await>

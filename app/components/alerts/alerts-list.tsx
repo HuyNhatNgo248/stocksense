@@ -294,10 +294,12 @@ function AlertRow({
   forecast,
   position,
   onSelect,
+  reviewPeriodDays,
 }: {
   forecast: Forecast;
   position: number;
   onSelect: (forecast: Forecast) => void;
+  reviewPeriodDays: number;
 }) {
   const { t } = useTranslation();
   const { product } = forecast;
@@ -317,9 +319,20 @@ function AlertRow({
   const isMarkedOrdered = !!expectedArrival;
 
   const daysLeft = Math.max(0, Math.floor(forecast.daysOfStockRemaining));
-  const safetyStock = Math.round(forecast.safetyStock);
-  const suggestedOrder =
-    Math.round(forecast.velocityPerDay * product.leadTimeDays) + safetyStock;
+  // (s, S) order-up-to policy:
+  //   target_stock = V × (lead_time + review_period) + safety_stock
+  //   suggested_order = max(0, target_stock - current_stock)
+  // - V × lead_time      → demand while waiting for the order to arrive
+  // - V × review_period  → demand until the next reorder is placed
+  // - safety_stock       → buffer maintained at all times
+  // - − current_stock    → only order the gap above what's already on hand
+  const targetStock =
+    forecast.velocityPerDay * (product.leadTimeDays + reviewPeriodDays) +
+    forecast.safetyStock;
+  const suggestedOrder = Math.max(
+    0,
+    Math.round(targetStock - product.currentStock),
+  );
 
   const statusBadgeTone = isCritical ? "critical" : "warning";
 
@@ -332,13 +345,19 @@ function AlertRow({
       <IndexTable.Cell>
         <Box maxWidth="260px">
           <InlineStack gap="300" blockAlign="center" wrap={false}>
-            {imageLoading ? (
-              <SkeletonThumbnail size="small" />
-            ) : imageUrl ? (
-              <Thumbnail size="small" source={imageUrl} alt={product.title} />
-            ) : (
-              <SkeletonThumbnail size="small" />
-            )}
+            <div style={{ flexShrink: 0 }}>
+              {imageLoading ? (
+                <SkeletonThumbnail size="small" />
+              ) : imageUrl ? (
+                <Thumbnail
+                  size="small"
+                  source={imageUrl}
+                  alt={product.title}
+                />
+              ) : (
+                <SkeletonThumbnail size="small" />
+              )}
+            </div>
             <Box minWidth="0">
               <BlockStack gap="050">
                 <Text
@@ -415,6 +434,7 @@ function AlertSection({
   emptyMessage,
   search,
   onSelect,
+  reviewPeriodDays,
 }: {
   title: string;
   tone: "critical" | "warning";
@@ -423,6 +443,7 @@ function AlertSection({
   emptyMessage: string;
   search: string;
   onSelect: (forecast: Forecast) => void;
+  reviewPeriodDays: number;
 }) {
   const { t } = useTranslation();
   const [forecasts, setForecasts] = useState<Forecast[]>(initial.data);
@@ -509,7 +530,7 @@ function AlertSection({
               },
               {
                 title: t("alerts.row.suggested", {
-                  defaultValue: "Reorder",
+                  defaultValue: "Suggested order",
                 }),
                 alignment: "end",
               },
@@ -522,6 +543,7 @@ function AlertSection({
                 forecast={f}
                 position={idx}
                 onSelect={onSelect}
+                reviewPeriodDays={reviewPeriodDays}
               />
             ))}
           </IndexTable>
@@ -551,12 +573,14 @@ interface AlertsListProps {
   reorder: ForecastListResponse;
   selectedId?: string;
   onSelect: (forecast: Forecast) => void;
+  reviewPeriodDays: number;
 }
 
 export function AlertsList({
   critical,
   reorder,
   onSelect,
+  reviewPeriodDays,
 }: AlertsListProps) {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<FilterValue>("all");
@@ -607,6 +631,7 @@ export function AlertsList({
           emptyMessage={t("alerts.noCritical")}
           search={search}
           onSelect={onSelect}
+          reviewPeriodDays={reviewPeriodDays}
         />
       )}
       {filter !== "critical" && (
@@ -618,6 +643,7 @@ export function AlertsList({
           emptyMessage={t("alerts.noReorder")}
           search={search}
           onSelect={onSelect}
+          reviewPeriodDays={reviewPeriodDays}
         />
       )}
     </BlockStack>
