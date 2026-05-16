@@ -77,8 +77,6 @@
       "reorder": "Reorder"
     },
     "card": {
-      "outOfStock": "Out of stock",
-      "reorderSoon": "Reorder soon",
       "currentStock": "Current Stock",
       "stockout": "Stockout",
       "suggestedOrder": "Suggested Order",

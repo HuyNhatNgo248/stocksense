@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useFetcher } from "react-router";
 import {
-  Badge,
   BlockStack,
   Card,
   IndexFilters,
@@ -15,11 +14,8 @@ import {
   Text,
   useSetIndexFiltersMode,
 } from "@shopify/polaris";
-import type {
-  Forecast,
-  ForecastListResponse,
-  ForecastStatus,
-} from "@/lib/api.server";
+import { ForecastStatusBadge } from "@/components/forecast-status-badge";
+import type { Forecast, ForecastListResponse } from "@/lib/api.server";
 
 interface InventoryTableProps {
   inventory: ForecastListResponse;
@@ -31,13 +27,6 @@ interface InventoryTableProps {
 
 const STATUS_FILTERS = ["All", "Critical", "Reorder", "OK"] as const;
 export type StatusFilter = (typeof STATUS_FILTERS)[number];
-
-const STATUS_TONE: Record<ForecastStatus, "critical" | "warning" | "success"> =
-  {
-    CRITICAL: "critical",
-    REORDER: "warning",
-    OK: "success",
-  };
 
 const FILTER_KEY: Record<StatusFilter, string> = {
   All: "dashboard.filters.all",
@@ -160,7 +149,7 @@ export function InventoryTable({
         </Text>
       </IndexTable.Cell>
       <IndexTable.Cell>
-        <Badge tone={STATUS_TONE[forecast.status]}>{forecast.status}</Badge>
+        <ForecastStatusBadge status={forecast.status} />
       </IndexTable.Cell>
       <IndexTable.Cell>
         <Text as="span" alignment="end" numeric>

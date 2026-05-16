@@ -19,10 +19,13 @@ import { EditIcon, InfoIcon, XIcon } from "@shopify/polaris-icons";
 import type {
   Forecast,
   ForecastProduct,
+  ForecastStatus,
   VelocityHistory,
 } from "@/lib/api.server";
 import { VelocityTrend } from "@/components/dashboard/velocity-trend";
 import { useVariantImage } from "@/hooks/use-variant-image";
+import { ForecastStatusBadge } from "@/components/forecast-status-badge";
+
 import {
   ProductVariantLink,
   type ProductVariantLinkProps,
@@ -69,6 +72,7 @@ interface PanelHeaderProps extends Omit<ProductVariantLinkProps, "children"> {
   title: string;
   sku: string;
   variantId: string;
+  forecastStatus: ForecastStatus;
   onClose: () => void;
 }
 
@@ -78,6 +82,7 @@ function PanelHeader({
   variantId,
   onClose,
   shopifyProductId,
+  forecastStatus,
   shopifyVariantId,
 }: PanelHeaderProps) {
   const { imageUrl, loading } = useVariantImage(variantId);
@@ -108,9 +113,14 @@ function PanelHeader({
                   {title}
                 </Text>
               </ProductVariantLink>
-              <Text as="span" tone="subdued" truncate>
-                {sku}
-              </Text>
+              <div className="flex gap-2">
+                {sku && (
+                  <Text as="span" tone="subdued" truncate>
+                    {sku}
+                  </Text>
+                )}
+                <ForecastStatusBadge status={forecastStatus} />
+              </div>
             </BlockStack>
           </Box>
         </InlineStack>
@@ -374,6 +384,7 @@ export function ProductDetailPanel({
             variantId={product.shopifyVariantId}
             shopifyProductId={product.shopifyProductId}
             shopifyVariantId={product.shopifyVariantId}
+            forecastStatus={forecast.status}
             onClose={onClose}
           />
           <Divider />

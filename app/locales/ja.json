@@ -77,8 +77,6 @@
       "reorder": "発注"
     },
     "card": {
-      "outOfStock": "在庫切れ",
-      "reorderSoon": "まもなく発注",
       "currentStock": "現在の在庫",
       "stockout": "在庫切れまで",
       "suggestedOrder": "推奨発注数",

@@ -37,6 +37,7 @@ import type {
   ForecastStatus,
 } from "@/types/api";
 import { useVariantImage } from "@/hooks/use-variant-image";
+import { ForecastStatusBadge } from "@/components/forecast-status-badge";
 
 function showToast(message: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -298,8 +299,7 @@ function AlertRow({
   position: number;
 }) {
   const { t } = useTranslation();
-  const { product } = forecast;
-  const isCritical = forecast.status === "CRITICAL";
+  const { product, status: forecastStatus } = forecast;
   const { imageUrl, loading: imageLoading } = useVariantImage(
     product.shopifyVariantId,
   );
@@ -316,8 +316,6 @@ function AlertRow({
 
   const daysLeft = Math.max(0, Math.floor(forecast.daysOfStockRemaining));
   const suggestedOrder = forecast.suggestedOrderQty;
-
-  const statusBadgeTone = isCritical ? "critical" : "warning";
 
   return (
     <IndexTable.Row id={forecast.id} position={position}>
@@ -356,11 +354,7 @@ function AlertRow({
             })}
           </Badge>
         ) : (
-          <Badge tone={statusBadgeTone}>
-            {isCritical
-              ? t("alerts.card.outOfStock")
-              : t("alerts.card.reorderSoon")}
-          </Badge>
+          <ForecastStatusBadge status={forecastStatus} />
         )}
       </IndexTable.Cell>
 

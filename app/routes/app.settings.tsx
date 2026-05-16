@@ -237,17 +237,12 @@ export default function Settings() {
                   })}
                 </Text>
                 <Text as="p" tone="subdued" variant="bodySm">
-                  {t("settings.emailAlerts.description", {
-                    defaultValue:
-                      "Get notified by email when SKUs cross the critical or reorder threshold.",
-                  })}
+                  {t("settings.emailAlerts.description")}
                 </Text>
               </BlockStack>
 
               <Checkbox
-                label={t("settings.emailAlerts.enable", {
-                  defaultValue: "Enable email alerts",
-                })}
+                label={t("settings.emailAlerts.enable")}
                 checked={alertsEnabled}
                 onChange={setAlertsEnabled}
               />
