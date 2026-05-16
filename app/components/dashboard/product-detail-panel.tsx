@@ -27,10 +27,6 @@ import {
   ProductVariantLink,
   type ProductVariantLinkProps,
 } from "@/components/product-variant-link";
-import {
-  DemandHistoryButton,
-  DemandHistoryModal,
-} from "@/components/demand-history";
 
 interface ProductDetailPanelProps {
   forecast: Forecast;
@@ -257,7 +253,7 @@ function TrendSection({ variantId }: { variantId: string }) {
   );
 }
 
-function PanelActions({ modalId }: { modalId: string }) {
+function PanelActions() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   return (
@@ -270,7 +266,6 @@ function PanelActions({ modalId }: { modalId: string }) {
       >
         {t("common.explainCalculation")}
       </Button>
-      <DemandHistoryButton modalId={modalId} />
     </BlockStack>
   );
 }
@@ -358,7 +353,6 @@ export function ProductDetailPanel({
   onClose,
 }: ProductDetailPanelProps) {
   const { product } = forecast;
-  const modalId = `panel-history-${product.id}`;
   const safetyStock = Math.round(forecast.safetyStock);
   const reorderPoint = Math.round(forecast.reorderPoint);
   const velocity = forecast.velocityPerDay.toFixed(2);
@@ -402,14 +396,9 @@ export function ProductDetailPanel({
             reorderPoint={reorderPoint}
           />
           <Divider />
-          <PanelActions modalId={modalId} />
+          <PanelActions />
         </BlockStack>
       </Card>
-      <DemandHistoryModal
-        modalId={modalId}
-        productTitle={product.title}
-        variantId={product.shopifyVariantId}
-      />
       <LeadTimeModal
         open={isLeadTimeOpen}
         onClose={() => setIsLeadTimeOpen(false)}

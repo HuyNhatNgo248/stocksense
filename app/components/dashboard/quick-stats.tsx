@@ -63,7 +63,7 @@ export function QuickStats({ metrics, onFilterChange }: QuickStatsProps) {
   const { t } = useTranslation();
   return (
     <Card padding="0">
-      <InlineGrid columns={{ xs: 1, sm: 2, md: 4 }} gap="0">
+      <InlineGrid columns={{ xs: 1, sm: 3 }} gap="0">
         <StatCell position={0} onFilter={() => onFilterChange?.("Critical")}>
           <StatContent
             title={t("dashboard.quickStats.critical")}
@@ -82,14 +82,7 @@ export function QuickStats({ metrics, onFilterChange }: QuickStatsProps) {
             invertDelta
           />
         </StatCell>
-        <StatCell position={2}>
-          <StatContent
-            title={t("dashboard.quickStats.totalSkus")}
-            value={String(metrics.total)}
-            delta={metrics.delta.skusAddedThisMonth}
-            deltaLabel={t("dashboard.quickStats.thisMonth")}
-          />
-        </StatCell>
+
         <StatCell position={3}>
           <StatContent
             title={t("dashboard.quickStats.forecastAccuracy")}

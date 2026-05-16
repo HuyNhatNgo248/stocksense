@@ -1,4 +1,4 @@
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { RefreshIcon } from "@shopify/polaris-icons";
 import type {
@@ -7,12 +7,13 @@ import type {
   ShouldRevalidateFunction,
 } from "react-router";
 import { Await, useLoaderData, useRevalidator } from "react-router";
-import { BlockStack, Page } from "@shopify/polaris";
+import { BlockStack, Card, EmptyState, Page } from "@shopify/polaris";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { createApiClient } from "@/lib/api.server";
 import type { Forecast } from "@/lib/api.server";
+import type { BackfillStatus } from "@/types/api";
 import {
   QuickStats,
   QuickStatsSkeleton,
@@ -32,20 +33,41 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     accessToken: session.accessToken ?? "",
   });
 
+  console.log("😆😆😆😆😆😆", session.shop, session.accessToken);
+
+  const { status: backfillStatus } = await api.sync.backfillStatus();
+
+  if (backfillStatus !== "done") {
+    return { ready: false as const, backfillStatus };
+  }
+
   return {
+    ready: true as const,
     metrics: api.forecasts.metrics(),
     inventory: api.forecasts.list({ page: 1 }),
   };
 };
 
 export default function Index() {
-  const { metrics, inventory } = useLoaderData<typeof loader>();
+  const data = useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const [selectedForecast, setSelectedForecast] = useState<Forecast | null>(
     null,
   );
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("All");
   const revalidator = useRevalidator();
+
+  if (!data.ready) {
+    return (
+      <BackfillScreen
+        status={data.backfillStatus}
+        onRefresh={() => revalidator.revalidate()}
+        isRefreshing={revalidator.state !== "idle"}
+      />
+    );
+  }
+
+  const { metrics, inventory } = data;
 
   return (
     <Page
@@ -129,6 +151,59 @@ export default function Index() {
           )}
         </div>
       </div>
+    </Page>
+  );
+}
+
+function BackfillScreen({
+  status,
+  onRefresh,
+  isRefreshing,
+}: {
+  status: BackfillStatus;
+  onRefresh: () => void;
+  isRefreshing: boolean;
+}) {
+  const { t } = useTranslation();
+  const revalidator = useRevalidator();
+
+  // Auto-poll every 5s while sync is in progress, but stop on "failed"
+  // (let the merchant retry manually instead of hammering a broken job).
+  useEffect(() => {
+    if (status === "failed") return;
+    const id = setInterval(() => {
+      if (revalidator.state === "idle") revalidator.revalidate();
+    }, 5000);
+    return () => clearInterval(id);
+  }, [status, revalidator]);
+
+  const isFailed = status === "failed";
+
+  const heading = isFailed
+    ? t("dashboard.backfill.failedHeading")
+    : t("dashboard.backfill.heading");
+
+  const description = isFailed
+    ? t("dashboard.backfill.failedDescription")
+    : t("dashboard.backfill.description");
+
+  return (
+    <Page title={t("dashboard.title")}>
+      <Card>
+        <EmptyState
+          heading={heading}
+          image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
+          action={{
+            content: isFailed
+              ? t("dashboard.backfill.retry")
+              : t("common.refresh"),
+            onAction: onRefresh,
+            loading: isRefreshing,
+          }}
+        >
+          <p>{description}</p>
+        </EmptyState>
+      </Card>
     </Page>
   );
 }

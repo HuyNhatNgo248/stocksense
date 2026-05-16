@@ -1,6 +1,7 @@
 import type {
   AlertSettings,
   AppSettings,
+  BackfillStatusResponse,
   ForecastListResponse,
   ForecastMetrics,
   ForecastProduct,
@@ -117,6 +118,10 @@ function createApiClient({ shop, accessToken }: ApiClientOptions) {
         }),
       unmarkOrdered: (variantId: string) =>
         del(`/api/forecasts/${variantId}/mark-ordered`),
+    },
+    sync: {
+      backfillStatus: () =>
+        get<BackfillStatusResponse>("/api/sync/backfill-status"),
     },
   };
 }

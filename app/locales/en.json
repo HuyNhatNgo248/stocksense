@@ -54,6 +54,13 @@
       "updateLeadTime": "Update Lead Time",
       "leadTimeDaysLabel": "Lead time (days)",
       "leadTimeUpdated": "Lead time updated"
+    },
+    "backfill": {
+      "heading": "Setting up StockSense for your store",
+      "description": "We're importing your inventory and sales history so we can forecast accurate reorder points. This usually takes a minute or two.",
+      "failedHeading": "Sync failed",
+      "failedDescription": "Something went wrong while importing your sales history. Try again, or contact support if the problem continues.",
+      "retry": "Try again"
     }
   },
   "alerts": {
@@ -82,8 +89,28 @@
       "leadTime": "Lead time",
       "units": "{{n}} units",
       "days": "{{n}} days",
-      "viewDemandHistory": "View Demand History",
       "now": "Now"
+    },
+    "row": {
+      "product": "Product",
+      "status": "Status",
+      "stock": "Stock",
+      "stockout": "Stockout",
+      "suggested": "Suggested order",
+      "singular": "alert",
+      "plural": "alerts",
+      "orderedOn": "Ordered · {{date}}"
+    },
+    "actions": {
+      "markOrdered": "Mark as ordered",
+      "markedOrdered": "Marked as ordered · arriving {{date}}",
+      "unmark": "Mark as not ordered",
+      "unmarked": "Removed from ordered",
+      "editArrival": "Edit arrival date",
+      "dateUpdated": "Arrival date updated to {{date}}",
+      "arrivingOn": "Arriving {{date}}",
+      "arrivalDateLabel": "Expected arrival date",
+      "more": "More actions"
     },
     "items": "{{n}} items",
     "searchPlaceholder": "Search SKU or product..."
@@ -101,8 +128,11 @@
     "reviewPeriod": "Review period (days)",
     "reviewPeriodHelp": "How often you plan to reorder. Drives the suggested order quantity on alerts.",
     "emailAlerts": {
+      "title": "Email alerts",
+      "description": "Get notified by email when SKUs cross the critical or reorder threshold.",
+      "enable": "Enable email alerts",
       "email": "Notification email",
-      "emailHelp": "Address that will receive alert notification."
+      "emailHelp": "Address that will receive alert notifications."
     },
     "syncOptions": {
       "1h": "Every hour",
@@ -129,12 +159,12 @@
       "safetyStock": "3. Safety Stock",
       "cycleStock": "4. Cycle Stock",
       "rop": "5. Reorder Point (ROP)",
-      "status": "6. Status Classification"
+      "suggestedOrder": "6. Suggested Order Quantity",
+      "status": "7. Status Classification"
     }
   },
   "common": {
     "explainCalculation": "Explain Calculation",
-    "demandHistory": "Demand History",
     "cancel": "Cancel",
     "save": "Save",
     "refresh": "Refresh"

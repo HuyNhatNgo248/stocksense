@@ -76,3 +76,14 @@ export interface AlertSettings {
   alertsEnabled: boolean;
   alertEmail: string | null;
 }
+
+export type BackfillStatus =
+  | "pending"
+  | "running"
+  | "done"
+  | "failed"
+  | "not_started";
+
+export interface BackfillStatusResponse {
+  status: BackfillStatus;
+}

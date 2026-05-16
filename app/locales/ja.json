@@ -54,6 +54,13 @@
       "updateLeadTime": "リードタイムを更新",
       "leadTimeDaysLabel": "リードタイム（日）",
       "leadTimeUpdated": "リードタイムを更新しました"
+    },
+    "backfill": {
+      "heading": "ストア向けにStockSenseを準備しています",
+      "description": "在庫情報と販売履歴をインポートして、正確な発注点を予測できるようにしています。通常1〜2分ほどかかります。",
+      "failedHeading": "同期に失敗しました",
+      "failedDescription": "販売履歴のインポート中に問題が発生しました。もう一度お試しください。問題が続く場合はサポートまでお問い合わせください。",
+      "retry": "再試行"
     }
   },
   "alerts": {
@@ -82,8 +89,28 @@
       "leadTime": "リードタイム",
       "units": "{{n}}個",
       "days": "{{n}}日",
-      "viewDemandHistory": "需要履歴を見る",
       "now": "今すぐ"
+    },
+    "row": {
+      "product": "商品",
+      "status": "ステータス",
+      "stock": "在庫",
+      "stockout": "在庫切れまで",
+      "suggested": "推奨発注数",
+      "singular": "アラート",
+      "plural": "アラート",
+      "orderedOn": "発注済み · {{date}}"
+    },
+    "actions": {
+      "markOrdered": "発注済みにする",
+      "markedOrdered": "発注済みに設定しました · 到着予定 {{date}}",
+      "unmark": "発注済みを解除",
+      "unmarked": "発注済みから削除しました",
+      "editArrival": "到着予定日を編集",
+      "dateUpdated": "到着予定日を {{date}} に更新しました",
+      "arrivingOn": "到着予定 {{date}}",
+      "arrivalDateLabel": "到着予定日",
+      "more": "その他のアクション"
     },
     "items": "{{n}}件",
     "searchPlaceholder": "SKUまたは商品名で検索..."
@@ -101,6 +128,9 @@
     "reviewPeriod": "レビュー期間（日）",
     "reviewPeriodHelp": "どのくらいの頻度で再発注する予定かを設定します。アラート時の推奨発注数量に影響します。",
     "emailAlerts": {
+      "title": "メールアラート",
+      "description": "SKUが緊急または発注の閾値を超えたときにメールで通知を受け取ります。",
+      "enable": "メールアラートを有効にする",
       "email": "通知メールアドレス",
       "emailHelp": "アラート通知を受信するメールアドレスです。"
     },
@@ -129,12 +159,12 @@
       "safetyStock": "3. 安全在庫",
       "cycleStock": "4. サイクル在庫",
       "rop": "5. 発注点（ROP）",
-      "status": "6. ステータス分類"
+      "suggestedOrder": "6. 推奨発注数量",
+      "status": "7. ステータス分類"
     }
   },
   "common": {
     "explainCalculation": "計算を説明",
-    "demandHistory": "需要履歴",
     "cancel": "キャンセル",
     "save": "保存",
     "refresh": "更新"
