@@ -205,18 +205,13 @@ export default function Settings() {
 
               <InlineGrid columns={{ xs: 1, md: 2 }} gap="400">
                 <TextField
-                  label={t("settings.reviewPeriod", {
-                    defaultValue: "Review period (days)",
-                  })}
+                  label={t("settings.reviewPeriod")}
                   value={reviewPeriod}
                   onChange={setReviewPeriod}
                   type="number"
                   min={1}
                   autoComplete="off"
-                  helpText={t("settings.reviewPeriodHelp", {
-                    defaultValue:
-                      "How often you plan to reorder. Drives the suggested order quantity on alerts.",
-                  })}
+                  helpText={t("settings.reviewPeriodHelp")}
                 />
               </InlineGrid>
 
@@ -259,18 +254,13 @@ export default function Settings() {
 
               {alertsEnabled && (
                 <TextField
-                  label={t("settings.emailAlerts.email", {
-                    defaultValue: "Notification email",
-                  })}
+                  label={t("settings.emailAlerts.email")}
                   type="email"
                   value={alertEmail}
                   onChange={setAlertEmail}
                   placeholder="alerts@example.com"
                   autoComplete="email"
-                  helpText={t("settings.emailAlerts.emailHelp", {
-                    defaultValue:
-                      "Address that will receive alert notifications.",
-                  })}
+                  helpText={t("settings.emailAlerts.emailHelp")}
                 />
               )}
             </BlockStack>

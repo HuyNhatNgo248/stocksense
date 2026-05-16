@@ -1,12 +1,13 @@
 import { Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { cn } from "@/lib/cn";
+import { RefreshIcon } from "@shopify/polaris-icons";
 import type {
   HeadersFunction,
   LoaderFunctionArgs,
   ShouldRevalidateFunction,
 } from "react-router";
-import { Await, useLoaderData } from "react-router";
+import { Await, useLoaderData, useRevalidator } from "react-router";
+import { BlockStack, Page } from "@shopify/polaris";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
@@ -44,22 +45,42 @@ export default function Index() {
     null,
   );
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("All");
+  const revalidator = useRevalidator();
 
   return (
-    <s-page heading={t("dashboard.title")} inlineSize="large">
-      <div className="flex gap-4 items-start">
-        {/* Main content */}
-        <div className="flex-1 min-w-0 transition-all duration-300">
-          <s-stack gap="large">
-            <s-box padding="small" background="base" borderRadius="base">
-              <Suspense fallback={<QuickStatsSkeleton />}>
-                <Await resolve={metrics}>
-                  {(m) => (
-                    <QuickStats metrics={m} onFilterChange={setActiveFilter} />
-                  )}
-                </Await>
-              </Suspense>
-            </s-box>
+    <Page
+      title={t("dashboard.title")}
+      fullWidth
+      secondaryActions={[
+        {
+          content: t("common.refresh"),
+          icon: RefreshIcon,
+          onAction: () => revalidator.revalidate(),
+        },
+      ]}
+    >
+      <div
+        style={{
+          display: "flex",
+          gap: 16,
+          alignItems: "flex-start",
+        }}
+      >
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            transition: "all 300ms ease-in-out",
+          }}
+        >
+          <BlockStack gap="500">
+            <Suspense fallback={<QuickStatsSkeleton />}>
+              <Await resolve={metrics}>
+                {(m) => (
+                  <QuickStats metrics={m} onFilterChange={setActiveFilter} />
+                )}
+              </Await>
+            </Suspense>
 
             <Suspense fallback={<InventoryTableSkeleton />}>
               <Await resolve={inventory}>
@@ -78,18 +99,28 @@ export default function Index() {
                 )}
               </Await>
             </Suspense>
-          </s-stack>
+          </BlockStack>
         </div>
 
-        {/* Detail panel — slides in/out */}
         <div
-          className={cn(
-            "transition-all duration-300 ease-in-out overflow-hidden shrink-0 sticky top-0 self-start",
-            selectedForecast ? "w-80" : "w-0",
-          )}
+          style={{
+            width: selectedForecast ? 320 : 0,
+            flexShrink: 0,
+            overflow: "hidden",
+            transition: "width 300ms ease-in-out",
+            position: "sticky",
+            top: 0,
+            alignSelf: "flex-start",
+          }}
         >
           {selectedForecast && (
-            <div className="overflow-y-auto max-h-screen w-80">
+            <div
+              style={{
+                width: 320,
+                maxHeight: "100vh",
+                overflowY: "auto",
+              }}
+            >
               <ProductDetailPanel
                 forecast={selectedForecast}
                 onClose={() => setSelectedForecast(null)}
@@ -98,7 +129,7 @@ export default function Index() {
           )}
         </div>
       </div>
-    </s-page>
+    </Page>
   );
 }
 
@@ -111,6 +142,8 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
   defaultShouldRevalidate,
 }) => {
   if (formAction === "/app/velocity-history") return false;
+  if (formAction === "/app/mark-ordered") return false;
+  if (formAction === "/app/update-lead-time") return false;
   return defaultShouldRevalidate;
 };
 

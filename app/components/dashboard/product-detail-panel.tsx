@@ -87,7 +87,12 @@ function PanelHeader({
   const { imageUrl, loading } = useVariantImage(variantId);
 
   return (
-    <InlineStack align="space-between" blockAlign="start" gap="200" wrap={false}>
+    <InlineStack
+      align="space-between"
+      blockAlign="start"
+      gap="200"
+      wrap={false}
+    >
       <Box minWidth="0">
         <InlineStack gap="300" blockAlign="start" wrap={false}>
           {loading ? (
@@ -192,11 +197,7 @@ function ForecastFormula({
   return (
     <BlockStack gap="300">
       <SectionLabel>{t("dashboard.panel.forecastFormula")}</SectionLabel>
-      <Box
-        padding="300"
-        background="bg-surface-secondary"
-        borderRadius="200"
-      >
+      <Box padding="300" background="bg-surface-secondary" borderRadius="200">
         <BlockStack gap="100">
           <Text as="p" variant="bodySm">
             μ = {velocity}, σ = {stddev}, L = {leadTime}
@@ -236,10 +237,7 @@ function TrendSection({ variantId }: { variantId: string }) {
       <SectionLabel>{t("dashboard.panel.trend")}</SectionLabel>
       <Box padding="200" background="bg-surface-secondary" borderRadius="200">
         {isLoading ? (
-          <Box
-            padding="400"
-            minHeight="192px"
-          >
+          <Box padding="400" minHeight="192px">
             <div
               style={{
                 display: "flex",

@@ -98,6 +98,12 @@
     "serviceLevel": "Service Level (Z-score)",
     "defaultLeadTime": "Default Lead Time (days)",
     "syncFrequency": "Sync Frequency",
+    "reviewPeriod": "Review period (days)",
+    "reviewPeriodHelp": "How often you plan to reorder. Drives the suggested order quantity on alerts.",
+    "emailAlerts": {
+      "email": "Notification email",
+      "emailHelp": "Address that will receive alert notification."
+    },
     "syncOptions": {
       "1h": "Every hour",
       "6h": "Every 6 hours",
@@ -130,6 +136,7 @@
     "explainCalculation": "Explain Calculation",
     "demandHistory": "Demand History",
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "refresh": "Refresh"
   }
 }

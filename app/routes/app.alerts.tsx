@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { Await, useLoaderData } from "react-router";
+import { Await, useLoaderData, useRevalidator } from "react-router";
+import { RefreshIcon } from "@shopify/polaris-icons";
 import { Page } from "@shopify/polaris";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { boundary } from "@shopify/shopify-app-react-router/server";
@@ -39,9 +40,19 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export default function AlertsPage() {
   const { critical, reorder } = useLoaderData<typeof loader>();
   const { t } = useTranslation();
+  const revalidator = useRevalidator();
 
   return (
-    <Page title={t("alerts.title")}>
+    <Page
+      title={t("alerts.title")}
+      secondaryActions={[
+        {
+          content: t("common.refresh"),
+          icon: RefreshIcon,
+          onAction: () => revalidator.revalidate(),
+        },
+      ]}
+    >
       <Suspense fallback={<AlertsListSkeleton />}>
         <Await resolve={Promise.all([critical, reorder])}>
           {([c, r]) => <AlertsList critical={c} reorder={r} />}
