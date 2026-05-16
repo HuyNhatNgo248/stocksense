@@ -293,11 +293,9 @@ export function AlertsListSkeleton() {
 function AlertRow({
   forecast,
   position,
-  onSelect,
 }: {
   forecast: Forecast;
   position: number;
-  onSelect: (forecast: Forecast) => void;
 }) {
   const { t } = useTranslation();
   const { product } = forecast;
@@ -322,11 +320,7 @@ function AlertRow({
   const statusBadgeTone = isCritical ? "critical" : "warning";
 
   return (
-    <IndexTable.Row
-      id={forecast.id}
-      position={position}
-      onClick={() => onSelect(forecast)}
-    >
+    <IndexTable.Row id={forecast.id} position={position}>
       <IndexTable.Cell>
         <Box maxWidth="260px">
           <InlineStack gap="300" blockAlign="center" wrap={false}>
@@ -334,23 +328,14 @@ function AlertRow({
               {imageLoading ? (
                 <SkeletonThumbnail size="small" />
               ) : imageUrl ? (
-                <Thumbnail
-                  size="small"
-                  source={imageUrl}
-                  alt={product.title}
-                />
+                <Thumbnail size="small" source={imageUrl} alt={product.title} />
               ) : (
                 <SkeletonThumbnail size="small" />
               )}
             </div>
             <Box minWidth="0">
               <BlockStack gap="050">
-                <Text
-                  as="span"
-                  variant="bodyMd"
-                  fontWeight="semibold"
-                  truncate
-                >
+                <Text as="span" variant="bodyMd" fontWeight="semibold" truncate>
                   {product.title}
                 </Text>
                 <Text as="span" tone="subdued" variant="bodySm" truncate>
@@ -418,7 +403,6 @@ function AlertSection({
   initial,
   emptyMessage,
   search,
-  onSelect,
 }: {
   title: string;
   tone: "critical" | "warning";
@@ -426,7 +410,6 @@ function AlertSection({
   initial: ForecastListResponse;
   emptyMessage: string;
   search: string;
-  onSelect: (forecast: Forecast) => void;
 }) {
   const { t } = useTranslation();
   const [forecasts, setForecasts] = useState<Forecast[]>(initial.data);
@@ -521,12 +504,7 @@ function AlertSection({
             ]}
           >
             {forecasts.map((f, idx) => (
-              <AlertRow
-                key={f.id}
-                forecast={f}
-                position={idx}
-                onSelect={onSelect}
-              />
+              <AlertRow key={f.id} forecast={f} position={idx} />
             ))}
           </IndexTable>
         )}
@@ -553,15 +531,9 @@ const FILTER_TABS: FilterValue[] = ["all", "critical", "reorder"];
 interface AlertsListProps {
   critical: ForecastListResponse;
   reorder: ForecastListResponse;
-  selectedId?: string;
-  onSelect: (forecast: Forecast) => void;
 }
 
-export function AlertsList({
-  critical,
-  reorder,
-  onSelect,
-}: AlertsListProps) {
+export function AlertsList({ critical, reorder }: AlertsListProps) {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<FilterValue>("all");
   const [search, setSearch] = useState("");
@@ -610,7 +582,6 @@ export function AlertsList({
           initial={critical}
           emptyMessage={t("alerts.noCritical")}
           search={search}
-          onSelect={onSelect}
         />
       )}
       {filter !== "critical" && (
@@ -621,7 +592,6 @@ export function AlertsList({
           initial={reorder}
           emptyMessage={t("alerts.noReorder")}
           search={search}
-          onSelect={onSelect}
         />
       )}
     </BlockStack>
