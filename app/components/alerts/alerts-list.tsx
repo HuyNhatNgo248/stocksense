@@ -38,6 +38,7 @@ import type {
 } from "@/types/api";
 import { useVariantImage } from "@/hooks/use-variant-image";
 import { ForecastStatusBadge } from "@/components/forecast-status-badge";
+import { ProductVariantLink } from "../product-variant-link";
 
 function showToast(message: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -333,9 +334,19 @@ function AlertRow({
             </div>
             <Box minWidth="0">
               <BlockStack gap="050">
-                <Text as="span" variant="bodyMd" fontWeight="semibold" truncate>
-                  {product.title}
-                </Text>
+                <ProductVariantLink
+                  shopifyProductId={product.shopifyProductId}
+                  shopifyVariantId={product.shopifyVariantId}
+                >
+                  <Text
+                    as="span"
+                    variant="bodyMd"
+                    fontWeight="semibold"
+                    truncate
+                  >
+                    {product.title}
+                  </Text>
+                </ProductVariantLink>
                 <Text as="span" tone="subdued" variant="bodySm" truncate>
                   {product.sku}
                 </Text>
@@ -412,6 +423,17 @@ function AlertSection({
   const [total, setTotal] = useState(initial.total);
   const [loading, setLoading] = useState(false);
   const mounted = useRef(false);
+
+  // Sync local state with the loader's `initial` prop whenever it changes
+  // (e.g., after revalidator.revalidate() from the page refresh button).
+  // Without this, useState initializers only run on mount and the table
+  // would keep showing stale data after a refresh.
+  useEffect(() => {
+    setForecasts(initial.data);
+    setCurrentPage(initial.page);
+    setTotalPages(initial.totalPages);
+    setTotal(initial.total);
+  }, [initial]);
 
   async function loadPage(page: number, q: string, append: boolean) {
     setLoading(true);

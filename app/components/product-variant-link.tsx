@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Link } from "@shopify/polaris";
 
 function extractNumericId(gid?: string | null): string | null {
   if (!gid) return null;
@@ -8,7 +8,7 @@ function extractNumericId(gid?: string | null): string | null {
 export interface ProductVariantLinkProps {
   shopifyProductId: string;
   shopifyVariantId?: string;
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 export function ProductVariantLink({
@@ -20,5 +20,9 @@ export function ProductVariantLink({
   const variantId = extractNumericId(shopifyVariantId);
   const href = `shopify:admin/products/${productId}/${variantId ? `variants/${variantId}` : ""}`;
 
-  return <s-link href={href}>{children}</s-link>;
+  return (
+    <Link url={href} monochrome target="_blank">
+      {children}
+    </Link>
+  );
 }

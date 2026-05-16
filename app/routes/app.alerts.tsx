@@ -13,7 +13,7 @@ import {
   AlertsListSkeleton,
 } from "@/components/alerts/alerts-list";
 
-export const PAGE_LIMIT = 5;
+export const PAGE_LIMIT = 10;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -54,8 +54,14 @@ export default function AlertsPage() {
       ]}
     >
       <Suspense fallback={<AlertsListSkeleton />}>
-        <Await resolve={Promise.all([critical, reorder])}>
-          {([c, r]) => <AlertsList critical={c} reorder={r} />}
+        <Await resolve={critical}>
+          {(criticalData) => (
+            <Await resolve={reorder}>
+              {(reorderData) => (
+                <AlertsList critical={criticalData} reorder={reorderData} />
+              )}
+            </Await>
+          )}
         </Await>
       </Suspense>
     </Page>

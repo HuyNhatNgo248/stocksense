@@ -57,9 +57,17 @@ export function InventoryTable({
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("All");
   const [search, setSearch] = useState("");
   const [, setPage] = useState(inventory.page);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const { mode, setMode } = useSetIndexFiltersMode();
 
-  const data = fetcher.data ?? inventory;
+  // Reset the "hasInteracted" flag whenever the loader sends fresh inventory
+  // (e.g., after revalidator.revalidate() from the page refresh button).
+  // Without this reset, stale fetcher.data would override the new inventory.
+  useEffect(() => {
+    setHasInteracted(false);
+  }, [inventory]);
+
+  const data = hasInteracted && fetcher.data ? fetcher.data : inventory;
   const { data: forecasts, totalPages, total, limit } = data;
   const currentPage = data.page;
   const from = total === 0 ? 0 : (currentPage - 1) * limit + 1;
@@ -73,6 +81,7 @@ export function InventoryTable({
     });
     if (filter !== "All") params.set("status", filter.toUpperCase());
     if (q) params.set("search", q);
+    setHasInteracted(true);
     fetcher.load(`/app/inventory?${params.toString()}`);
   }
 
@@ -103,6 +112,7 @@ export function InventoryTable({
       if (activeFilter !== "All")
         params.set("status", activeFilter.toUpperCase());
       if (search) params.set("search", search);
+      setHasInteracted(true);
       fetcher.load(`/app/inventory?${params.toString()}`);
     }, 400);
     return () => clearTimeout(timer);
