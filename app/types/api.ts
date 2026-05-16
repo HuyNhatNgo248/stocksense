@@ -31,6 +31,7 @@ export interface Forecast {
   stddevDemand: number;
   safetyStock: number;
   reorderPoint: number;
+  suggestedOrderQty: number;
   daysOfStockRemaining: number;
   forecastAccuracy: number;
   status: ForecastStatus;
