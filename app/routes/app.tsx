@@ -1,4 +1,8 @@
-import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
+import type {
+  HeadersFunction,
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction,
+} from "react-router";
 import { Outlet, redirect, useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
@@ -50,6 +54,19 @@ export default function App() {
 export function ErrorBoundary() {
   return boundary.error(useRouteError());
 }
+
+export const shouldRevalidate: ShouldRevalidateFunction = ({
+  formAction,
+  defaultShouldRevalidate,
+}) => {
+  // Skip parent layout revalidation for in-app fetcher actions — they don't
+  // change auth/install state and revalidating slows down side-panel UX.
+  if (formAction === "/app/velocity-history") return false;
+  if (formAction === "/app/mark-ordered") return false;
+  if (formAction === "/app/update-lead-time") return false;
+  if (formAction === "/app/variant-image") return false;
+  return defaultShouldRevalidate;
+};
 
 export const headers: HeadersFunction = (headersArgs) => {
   return boundary.headers(headersArgs);

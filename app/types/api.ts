@@ -69,3 +69,8 @@ export interface AppSettings {
   syncFrequencyHours: number;
   updatedAt: string;
 }
+
+export interface AlertSettings {
+  alertsEnabled: boolean;
+  alertEmail: string | null;
+}

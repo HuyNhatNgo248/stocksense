@@ -13,9 +13,8 @@ import {
   DatePicker,
   IndexFilters,
   IndexFiltersMode,
-  InlineGrid,
+  IndexTable,
   InlineStack,
-  Link,
   Modal,
   Popover,
   SkeletonBodyText,
@@ -27,8 +26,7 @@ import {
 } from "@shopify/polaris";
 import {
   CalendarIcon,
-  ClockIcon,
-  EditIcon,
+  CheckCircleIcon,
   ExternalIcon,
   MenuHorizontalIcon,
 } from "@shopify/polaris-icons";
@@ -40,7 +38,6 @@ import type {
   ForecastStatus,
 } from "@/types/api";
 import { useVariantImage } from "@/hooks/use-variant-image";
-import { ProductDetailPanel } from "@/components/dashboard/product-detail-panel";
 
 function extractNumericId(gid?: string | null): string | null {
   if (!gid) return null;
@@ -150,6 +147,7 @@ function AlertCardActions({
     const days = product.leadTimeDays > 0 ? product.leadTimeDays : 7;
     const iso = todayPlusDays(days);
     submitMark(iso);
+    setMenuOpen(false);
     showToast(
       t("alerts.actions.markedOrdered", {
         defaultValue: `Marked as ordered · arriving ${formatArrivalDate(iso)}`,
@@ -191,24 +189,6 @@ function AlertCardActions({
     );
   }
 
-  function handleSnooze() {
-    showToast(
-      t("alerts.actions.snoozed", {
-        defaultValue: "Snoozed for 7 days (pending API)",
-      }),
-    );
-    setMenuOpen(false);
-  }
-
-  function handleUpdateLeadTime() {
-    showToast(
-      t("alerts.actions.updateLeadTime", {
-        defaultValue: "Open lead time editor (TODO)",
-      }),
-    );
-    setMenuOpen(false);
-  }
-
   const menuItems = isMarked
     ? [
         {
@@ -217,6 +197,13 @@ function AlertCardActions({
           }),
           icon: CalendarIcon,
           onAction: handleOpenEditDate,
+        },
+        {
+          content: t("alerts.actions.unmark", {
+            defaultValue: "Mark as not ordered",
+          }),
+          destructive: true,
+          onAction: handleUnmark,
         },
         {
           content: t("alerts.actions.viewOnShopify", {
@@ -228,18 +215,11 @@ function AlertCardActions({
       ]
     : [
         {
-          content: t("alerts.actions.snooze7Days", {
-            defaultValue: "Snooze 7 days",
+          content: t("alerts.actions.markOrdered", {
+            defaultValue: "Mark as ordered",
           }),
-          icon: ClockIcon,
-          onAction: handleSnooze,
-        },
-        {
-          content: t("alerts.actions.updateLeadTime", {
-            defaultValue: "Update lead time",
-          }),
-          icon: EditIcon,
-          onAction: handleUpdateLeadTime,
+          icon: CheckCircleIcon,
+          onAction: handleMarkOrdered,
         },
         {
           content: t("alerts.actions.viewOnShopify", {
@@ -252,34 +232,22 @@ function AlertCardActions({
 
   return (
     <>
-      <InlineStack gap="200" wrap={false}>
-        {isMarked ? (
-          <Button onClick={handleUnmark} loading={isSubmitting}>
-            {t("alerts.actions.unmark", { defaultValue: "Unmark" })}
-          </Button>
-        ) : (
-          <Button onClick={handleMarkOrdered} loading={isSubmitting}>
-            {t("alerts.actions.markOrdered", {
-              defaultValue: "Mark as ordered",
+      <Popover
+        active={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        activator={
+          <Button
+            icon={MenuHorizontalIcon}
+            accessibilityLabel={t("alerts.actions.more", {
+              defaultValue: "More actions",
             })}
-          </Button>
-        )}
-        <Popover
-          active={menuOpen}
-          onClose={() => setMenuOpen(false)}
-          activator={
-            <Button
-              icon={MenuHorizontalIcon}
-              accessibilityLabel={t("alerts.actions.more", {
-                defaultValue: "More actions",
-              })}
-              onClick={() => setMenuOpen((v) => !v)}
-            />
-          }
-        >
-          <ActionList actionRole="menuitem" items={menuItems} />
-        </Popover>
-      </InlineStack>
+            onClick={() => setMenuOpen((v) => !v)}
+            loading={isSubmitting}
+          />
+        }
+      >
+        <ActionList actionRole="menuitem" items={menuItems} />
+      </Popover>
 
       <Modal
         open={editDateOpen}
@@ -347,28 +315,13 @@ export function AlertsListSkeleton() {
   );
 }
 
-function MetricBlock({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <BlockStack gap="100">
-      <Text as="span" variant="bodySm" tone="subdued">
-        {label}
-      </Text>
-      {children}
-    </BlockStack>
-  );
-}
-
-function AlertCard({
+function AlertRow({
   forecast,
+  position,
   onSelect,
 }: {
   forecast: Forecast;
+  position: number;
   onSelect: (forecast: Forecast) => void;
 }) {
   const { t } = useTranslation();
@@ -378,7 +331,6 @@ function AlertCard({
     product.shopifyVariantId,
   );
 
-  // undefined = use server value; null = unmarked locally; string = marked locally
   const [localExpectedArrival, setLocalExpectedArrival] = useState<
     string | null | undefined
   >(undefined);
@@ -395,103 +347,88 @@ function AlertCard({
     Math.round(forecast.velocityPerDay * product.leadTimeDays) + safetyStock;
 
   const statusBadgeTone = isCritical ? "critical" : "warning";
-  const metricsBg = isMarkedOrdered
-    ? "bg-surface-secondary"
-    : isCritical
-      ? "bg-surface-critical"
-      : "bg-surface-caution";
 
   return (
-    <Card padding="0">
-      <Box padding="400">
-        <InlineStack gap="400" wrap={false} blockAlign="start">
-          {imageLoading ? (
-            <SkeletonThumbnail size="large" />
-          ) : imageUrl ? (
-            <Thumbnail size="large" source={imageUrl} alt={product.title} />
-          ) : (
-            <SkeletonThumbnail size="large" />
-          )}
-          <Box minWidth="0" width="100%">
-            <InlineStack
-              align="space-between"
-              blockAlign="start"
-              gap="200"
-              wrap={false}
-            >
-              <Box minWidth="0">
-                <BlockStack gap="100">
-                  <Link onClick={() => onSelect(forecast)} removeUnderline>
-                    <Text as="h3" variant="headingMd" truncate>
-                      {product.title}
-                    </Text>
-                  </Link>
-                  <Text as="span" tone="subdued" variant="bodySm" truncate>
-                    SKU: {product.sku}
-                    {"  ·  "}
-                    {t("alerts.card.reorderPoint")}:{" "}
-                    {t("alerts.card.units", {
-                      n: Math.round(forecast.reorderPoint),
-                    })}
-                    {"  ·  "}
-                    {t("alerts.card.leadTime")}:{" "}
-                    {t("alerts.card.days", { n: product.leadTimeDays })}
-                  </Text>
-                  <InlineStack>
-                    {isMarkedOrdered ? (
-                      <Badge tone="success">
-                        {t("alerts.card.orderedArriving", {
-                          defaultValue: `Ordered · arriving ${formatArrivalDate(expectedArrival!)}`,
-                          date: formatArrivalDate(expectedArrival!),
-                        })}
-                      </Badge>
-                    ) : (
-                      <Badge tone={statusBadgeTone}>
-                        {isCritical
-                          ? t("alerts.card.outOfStock")
-                          : t("alerts.card.reorderSoon")}
-                      </Badge>
-                    )}
-                  </InlineStack>
-                </BlockStack>
-              </Box>
-              <AlertCardActions
-                forecast={forecast}
-                expectedArrival={expectedArrival}
-                onMarkedChange={setLocalExpectedArrival}
-              />
-            </InlineStack>
-          </Box>
-        </InlineStack>
-      </Box>
+    <IndexTable.Row
+      id={forecast.id}
+      position={position}
+      onClick={() => onSelect(forecast)}
+    >
+      <IndexTable.Cell>
+        <Box maxWidth="260px">
+          <InlineStack gap="300" blockAlign="center" wrap={false}>
+            {imageLoading ? (
+              <SkeletonThumbnail size="small" />
+            ) : imageUrl ? (
+              <Thumbnail size="small" source={imageUrl} alt={product.title} />
+            ) : (
+              <SkeletonThumbnail size="small" />
+            )}
+            <Box minWidth="0">
+              <BlockStack gap="050">
+                <Text
+                  as="span"
+                  variant="bodyMd"
+                  fontWeight="semibold"
+                  truncate
+                >
+                  {product.title}
+                </Text>
+                <Text as="span" tone="subdued" variant="bodySm" truncate>
+                  {product.sku}
+                </Text>
+              </BlockStack>
+            </Box>
+          </InlineStack>
+        </Box>
+      </IndexTable.Cell>
 
-      <Box
-        padding="400"
-        background={metricsBg}
-        borderBlockStartWidth="025"
-        borderColor="border"
-      >
-        <InlineGrid columns={{ xs: 1, sm: 3 }} gap="400">
-          <MetricBlock label={t("alerts.card.currentStock")}>
-            <Text as="p" variant="headingLg" fontWeight="bold">
-              {t("alerts.card.units", { n: product.currentStock })}
-            </Text>
-          </MetricBlock>
-          <MetricBlock label={t("alerts.card.stockout")}>
-            <Text as="p" variant="headingLg" fontWeight="bold">
-              {daysLeft === 0
-                ? t("alerts.card.now")
-                : t("alerts.card.days", { n: daysLeft })}
-            </Text>
-          </MetricBlock>
-          <MetricBlock label={t("alerts.card.suggestedOrder")}>
-            <Text as="p" variant="headingLg" fontWeight="bold">
-              {t("alerts.card.units", { n: suggestedOrder })}
-            </Text>
-          </MetricBlock>
-        </InlineGrid>
-      </Box>
-    </Card>
+      <IndexTable.Cell>
+        {isMarkedOrdered ? (
+          <Badge tone="success">
+            {t("alerts.row.orderedOn", {
+              defaultValue: `Ordered · ${formatArrivalDate(expectedArrival!)}`,
+              date: formatArrivalDate(expectedArrival!),
+            })}
+          </Badge>
+        ) : (
+          <Badge tone={statusBadgeTone}>
+            {isCritical
+              ? t("alerts.card.outOfStock")
+              : t("alerts.card.reorderSoon")}
+          </Badge>
+        )}
+      </IndexTable.Cell>
+
+      <IndexTable.Cell>
+        <Text as="span" alignment="end" numeric>
+          {product.currentStock}
+        </Text>
+      </IndexTable.Cell>
+
+      <IndexTable.Cell>
+        <Text as="span" alignment="end" numeric>
+          {daysLeft === 0 ? t("alerts.card.now") : `${daysLeft}d`}
+        </Text>
+      </IndexTable.Cell>
+
+      <IndexTable.Cell>
+        <Text as="span" alignment="end" numeric>
+          {suggestedOrder}
+        </Text>
+      </IndexTable.Cell>
+
+      <IndexTable.Cell>
+        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+        <div onClick={(e) => e.stopPropagation()}>
+          <AlertCardActions
+            forecast={forecast}
+            expectedArrival={expectedArrival}
+            onMarkedChange={setLocalExpectedArrival}
+          />
+        </div>
+      </IndexTable.Cell>
+    </IndexTable.Row>
   );
 }
 
@@ -561,8 +498,8 @@ function AlertSection({
         <Badge tone={tone}>{t("alerts.items", { n: total })}</Badge>
       </InlineStack>
 
-      {forecasts.length === 0 ? (
-        <Card>
+      <Card padding="0">
+        {forecasts.length === 0 ? (
           <Box padding="500">
             <InlineStack align="center">
               <Text as="span" tone="subdued">
@@ -570,24 +507,62 @@ function AlertSection({
               </Text>
             </InlineStack>
           </Box>
-        </Card>
-      ) : (
-        <BlockStack gap="300">
-          {forecasts.map((f) => (
-            <AlertCard key={f.id} forecast={f} onSelect={onSelect} />
-          ))}
-          {hasMore && (
-            <InlineStack align="center">
-              <Button
-                variant="secondary"
-                onClick={() => loadPage(currentPage + 1, search, true)}
-                loading={loading}
-              >
-                {t("alerts.loadMore", { shown: forecasts.length, total })}
-              </Button>
-            </InlineStack>
-          )}
-        </BlockStack>
+        ) : (
+          <IndexTable
+            resourceName={{
+              singular: t("alerts.row.singular", { defaultValue: "alert" }),
+              plural: t("alerts.row.plural", { defaultValue: "alerts" }),
+            }}
+            itemCount={forecasts.length}
+            selectable={false}
+            headings={[
+              {
+                title: t("alerts.row.product", { defaultValue: "Product" }),
+              },
+              {
+                title: t("alerts.row.status", { defaultValue: "Status" }),
+              },
+              {
+                title: t("alerts.row.stock", { defaultValue: "Stock" }),
+                alignment: "end",
+              },
+              {
+                title: t("alerts.row.stockout", {
+                  defaultValue: "Stockout",
+                }),
+                alignment: "end",
+              },
+              {
+                title: t("alerts.row.suggested", {
+                  defaultValue: "Reorder",
+                }),
+                alignment: "end",
+              },
+              { title: "" },
+            ]}
+          >
+            {forecasts.map((f, idx) => (
+              <AlertRow
+                key={f.id}
+                forecast={f}
+                position={idx}
+                onSelect={onSelect}
+              />
+            ))}
+          </IndexTable>
+        )}
+      </Card>
+
+      {hasMore && (
+        <InlineStack align="center">
+          <Button
+            variant="secondary"
+            onClick={() => loadPage(currentPage + 1, search, true)}
+            loading={loading}
+          >
+            {t("alerts.loadMore", { shown: forecasts.length, total })}
+          </Button>
+        </InlineStack>
       )}
     </BlockStack>
   );
@@ -599,15 +574,18 @@ const FILTER_TABS: FilterValue[] = ["all", "critical", "reorder"];
 interface AlertsListProps {
   critical: ForecastListResponse;
   reorder: ForecastListResponse;
+  selectedId?: string;
+  onSelect: (forecast: Forecast) => void;
 }
 
-export function AlertsList({ critical, reorder }: AlertsListProps) {
+export function AlertsList({
+  critical,
+  reorder,
+  onSelect,
+}: AlertsListProps) {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<FilterValue>("all");
   const [search, setSearch] = useState("");
-  const [selectedForecast, setSelectedForecast] = useState<Forecast | null>(
-    null,
-  );
   const { mode, setMode } = useSetIndexFiltersMode();
 
   const tabs = FILTER_TABS.map((f, index) => ({
@@ -645,66 +623,28 @@ export function AlertsList({ critical, reorder }: AlertsListProps) {
         />
       </Card>
 
-      <div
-        style={{
-          display: "flex",
-          gap: 16,
-          alignItems: "flex-start",
-        }}
-      >
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <BlockStack gap="500">
-            {filter !== "reorder" && (
-              <AlertSection
-                title={t("alerts.criticalSection")}
-                tone="critical"
-                status="CRITICAL"
-                initial={critical}
-                emptyMessage={t("alerts.noCritical")}
-                search={search}
-                onSelect={setSelectedForecast}
-              />
-            )}
-            {filter !== "critical" && (
-              <AlertSection
-                title={t("alerts.reorderSection")}
-                tone="warning"
-                status="REORDER"
-                initial={reorder}
-                emptyMessage={t("alerts.noReorder")}
-                search={search}
-                onSelect={setSelectedForecast}
-              />
-            )}
-          </BlockStack>
-        </div>
-        <div
-          style={{
-            width: selectedForecast ? 320 : 0,
-            flexShrink: 0,
-            overflow: "hidden",
-            transition: "width 300ms ease-in-out",
-            position: "sticky",
-            top: 0,
-            alignSelf: "flex-start",
-          }}
-        >
-          {selectedForecast && (
-            <div
-              style={{
-                width: 320,
-                maxHeight: "100vh",
-                overflowY: "auto",
-              }}
-            >
-              <ProductDetailPanel
-                forecast={selectedForecast}
-                onClose={() => setSelectedForecast(null)}
-              />
-            </div>
-          )}
-        </div>
-      </div>
+      {filter !== "reorder" && (
+        <AlertSection
+          title={t("alerts.criticalSection")}
+          tone="critical"
+          status="CRITICAL"
+          initial={critical}
+          emptyMessage={t("alerts.noCritical")}
+          search={search}
+          onSelect={onSelect}
+        />
+      )}
+      {filter !== "critical" && (
+        <AlertSection
+          title={t("alerts.reorderSection")}
+          tone="warning"
+          status="REORDER"
+          initial={reorder}
+          emptyMessage={t("alerts.noReorder")}
+          search={search}
+          onSelect={onSelect}
+        />
+      )}
     </BlockStack>
   );
 }

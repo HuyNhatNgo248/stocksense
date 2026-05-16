@@ -1,4 +1,5 @@
 import type {
+  AlertSettings,
   AppSettings,
   ForecastListResponse,
   ForecastMetrics,
@@ -81,6 +82,9 @@ function createApiClient({ shop, accessToken }: ApiClientOptions) {
           >
         >,
       ) => put<AppSettings>("/api/settings", data),
+      getAlerts: () => get<AlertSettings>("/api/settings/alerts"),
+      updateAlerts: (data: Partial<AlertSettings>) =>
+        put<AlertSettings>("/api/settings/alerts", data),
     },
     forecasts: {
       list: ({

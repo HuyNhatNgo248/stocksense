@@ -17,6 +17,7 @@ import {
   BlockStack,
   Button,
   Card,
+  Checkbox,
   Divider,
   InlineGrid,
   Page,
@@ -49,8 +50,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     shop: session.shop,
     accessToken: session.accessToken ?? "",
   });
-  const settings = await api.settings.get();
-  return { settings };
+  const [settings, alerts] = await Promise.all([
+    api.settings.get(),
+    api.settings.getAlerts(),
+  ]);
+  return { settings, alerts };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -61,26 +65,47 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   });
 
   const form = await request.formData();
-  await api.settings.update({
-    ewmaAlpha: Number(form.get("alpha")),
-    defaultServiceLevelZ: Number(form.get("z")),
-    defaultLeadTimeDays: Number(form.get("leadTime")),
-    syncFrequencyHours: Number(form.get("syncFrequency")),
-  });
 
-  return { success: true };
+  const alertsEnabled = form.get("alertsEnabled") === "true";
+  const alertEmail = ((form.get("alertEmail") as string) || "").trim();
+
+  try {
+    await api.settings.update({
+      ewmaAlpha: Number(form.get("alpha")),
+      defaultServiceLevelZ: Number(form.get("z")),
+      defaultLeadTimeDays: Number(form.get("leadTime")),
+      syncFrequencyHours: Number(form.get("syncFrequency")),
+    });
+
+    const alertsPayload: { alertsEnabled: boolean; alertEmail?: string } = {
+      alertsEnabled,
+    };
+    if (alertEmail) alertsPayload.alertEmail = alertEmail;
+    await api.settings.updateAlerts(alertsPayload);
+
+    return { success: true as const };
+  } catch (err) {
+    return {
+      success: false as const,
+      error: err instanceof Error ? err.message : "Failed to save settings",
+    };
+  }
 };
 
 export default function Settings() {
   const { t, i18n } = useTranslation();
-  const { settings } = useLoaderData<typeof loader>();
+  const { settings, alerts } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
 
   const [alpha, setAlpha] = useState(settings.ewmaAlpha);
   const [zIndex, setZIndex] = useState(zToIndex(settings.defaultServiceLevelZ));
-  const [leadTime, setLeadTime] = useState(String(settings.defaultLeadTimeDays));
+  const [leadTime, setLeadTime] = useState(
+    String(settings.defaultLeadTimeDays),
+  );
   const [syncFreq, setSyncFreq] = useState(settings.syncFrequencyHours);
+  const [alertsEnabled, setAlertsEnabled] = useState(alerts.alertsEnabled);
+  const [alertEmail, setAlertEmail] = useState(alerts.alertEmail ?? "");
   const zLevel = Z_LEVELS[zIndex];
 
   const isSubmitting = navigation.state === "submitting";
@@ -88,13 +113,21 @@ export default function Settings() {
     alpha !== settings.ewmaAlpha ||
     zLevel.z !== settings.defaultServiceLevelZ ||
     Number(leadTime) !== settings.defaultLeadTimeDays ||
-    syncFreq !== settings.syncFrequencyHours;
+    syncFreq !== settings.syncFrequencyHours ||
+    alertsEnabled !== alerts.alertsEnabled ||
+    alertEmail !== (alerts.alertEmail ?? "");
 
   useEffect(() => {
     if (actionData?.success) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).shopify?.toast.show(t("settings.saved"), {
         duration: 3000,
+      });
+    } else if (actionData && !actionData.success && actionData.error) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).shopify?.toast.show(actionData.error, {
+        duration: 4000,
+        isError: true,
       });
     }
   }, [actionData, t]);
@@ -113,14 +146,14 @@ export default function Settings() {
 
   return (
     <Page title={t("settings.title")}>
-      <Card>
+      <Form method="post">
         <BlockStack gap="500">
-          <Text as="h2" variant="headingMd">
-            {t("settings.forecastParameters")}
-          </Text>
-
-          <Form method="post">
+          <Card>
             <BlockStack gap="500">
+              <Text as="h2" variant="headingMd">
+                {t("settings.forecastParameters")}
+              </Text>
+
               <InlineGrid columns={{ xs: 1, md: 2 }} gap="400">
                 <RangeSlider
                   label={t("settings.ewmaAlpha")}
@@ -173,26 +206,75 @@ export default function Settings() {
                   onChange={setLanguage}
                 />
               </InlineGrid>
-
-              <input type="hidden" name="alpha" value={alpha} />
-              <input type="hidden" name="z" value={zLevel.z} />
-              <input type="hidden" name="leadTime" value={leadTime} />
-              <input type="hidden" name="syncFrequency" value={syncFreq} />
-
-              <InlineGrid columns={1}>
-                <Button
-                  variant="primary"
-                  submit
-                  disabled={!hasChanges || isSubmitting}
-                  loading={isSubmitting}
-                >
-                  {t("settings.save")}
-                </Button>
-              </InlineGrid>
             </BlockStack>
-          </Form>
+          </Card>
+
+          <Card>
+            <BlockStack gap="400">
+              <BlockStack gap="100">
+                <Text as="h2" variant="headingMd">
+                  {t("settings.emailAlerts.title", {
+                    defaultValue: "Email alerts",
+                  })}
+                </Text>
+                <Text as="p" tone="subdued" variant="bodySm">
+                  {t("settings.emailAlerts.description", {
+                    defaultValue:
+                      "Get notified by email when SKUs cross the critical or reorder threshold.",
+                  })}
+                </Text>
+              </BlockStack>
+
+              <Checkbox
+                label={t("settings.emailAlerts.enable", {
+                  defaultValue: "Enable email alerts",
+                })}
+                checked={alertsEnabled}
+                onChange={setAlertsEnabled}
+              />
+
+              {alertsEnabled && (
+                <TextField
+                  label={t("settings.emailAlerts.email", {
+                    defaultValue: "Notification email",
+                  })}
+                  type="email"
+                  value={alertEmail}
+                  onChange={setAlertEmail}
+                  placeholder="alerts@example.com"
+                  autoComplete="email"
+                  helpText={t("settings.emailAlerts.emailHelp", {
+                    defaultValue:
+                      "Address that will receive alert notifications.",
+                  })}
+                />
+              )}
+            </BlockStack>
+          </Card>
+
+          <input type="hidden" name="alpha" value={alpha} />
+          <input type="hidden" name="z" value={zLevel.z} />
+          <input type="hidden" name="leadTime" value={leadTime} />
+          <input type="hidden" name="syncFrequency" value={syncFreq} />
+          <input
+            type="hidden"
+            name="alertsEnabled"
+            value={String(alertsEnabled)}
+          />
+          <input type="hidden" name="alertEmail" value={alertEmail} />
+
+          <InlineGrid columns={1}>
+            <Button
+              variant="primary"
+              submit
+              disabled={!hasChanges || isSubmitting}
+              loading={isSubmitting}
+            >
+              {t("settings.save")}
+            </Button>
+          </InlineGrid>
         </BlockStack>
-      </Card>
+      </Form>
     </Page>
   );
 }

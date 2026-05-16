@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   HeadersFunction,
@@ -11,10 +11,12 @@ import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { createApiClient } from "@/lib/api.server";
+import type { Forecast } from "@/types/api";
 import {
   AlertsList,
   AlertsListSkeleton,
 } from "@/components/alerts/alerts-list";
+import { ProductDetailPanel } from "@/components/dashboard/product-detail-panel";
 
 export const PAGE_LIMIT = 5;
 
@@ -43,14 +45,67 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export default function AlertsPage() {
   const { critical, reorder } = useLoaderData<typeof loader>();
   const { t } = useTranslation();
+  const [selectedForecast, setSelectedForecast] = useState<Forecast | null>(
+    null,
+  );
 
   return (
-    <Page title={t("alerts.title")}>
-      <Suspense fallback={<AlertsListSkeleton />}>
-        <Await resolve={Promise.all([critical, reorder])}>
-          {([c, r]) => <AlertsList critical={c} reorder={r} />}
-        </Await>
-      </Suspense>
+    <Page title={t("alerts.title")} fullWidth>
+      <div
+        style={{
+          display: "flex",
+          gap: 16,
+          alignItems: "flex-start",
+        }}
+      >
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            transition: "all 300ms ease-in-out",
+          }}
+        >
+          <Suspense fallback={<AlertsListSkeleton />}>
+            <Await resolve={Promise.all([critical, reorder])}>
+              {([c, r]) => (
+                <AlertsList
+                  critical={c}
+                  reorder={r}
+                  selectedId={selectedForecast?.id}
+                  onSelect={setSelectedForecast}
+                />
+              )}
+            </Await>
+          </Suspense>
+        </div>
+
+        <div
+          style={{
+            width: selectedForecast ? 320 : 0,
+            flexShrink: 0,
+            overflow: "hidden",
+            transition: "width 300ms ease-in-out",
+            position: "sticky",
+            top: 0,
+            alignSelf: "flex-start",
+          }}
+        >
+          {selectedForecast && (
+            <div
+              style={{
+                width: 320,
+                maxHeight: "100vh",
+                overflowY: "auto",
+              }}
+            >
+              <ProductDetailPanel
+                forecast={selectedForecast}
+                onClose={() => setSelectedForecast(null)}
+              />
+            </div>
+          )}
+        </div>
+      </div>
     </Page>
   );
 }
