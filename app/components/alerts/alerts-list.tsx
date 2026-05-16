@@ -27,7 +27,6 @@ import {
 import {
   CalendarIcon,
   CheckCircleIcon,
-  ExternalIcon,
   MenuHorizontalIcon,
 } from "@shopify/polaris-icons";
 import { PAGE_LIMIT } from "@/routes/app.alerts";
@@ -38,11 +37,6 @@ import type {
   ForecastStatus,
 } from "@/types/api";
 import { useVariantImage } from "@/hooks/use-variant-image";
-
-function extractNumericId(gid?: string | null): string | null {
-  if (!gid) return null;
-  return gid.split("/").pop() ?? gid;
-}
 
 function showToast(message: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -110,11 +104,6 @@ function AlertCardActions({
 
   const { product } = forecast;
   const variantId = product.shopifyVariantId;
-  const productNumId = extractNumericId(product.shopifyProductId);
-  const variantNumId = extractNumericId(variantId);
-  const shopifyUrl = `shopify:admin/products/${productNumId}${
-    variantNumId ? `/variants/${variantNumId}` : ""
-  }`;
 
   const isMarked = !!expectedArrival;
   const isSubmitting = fetcher.state === "submitting";
@@ -205,13 +194,6 @@ function AlertCardActions({
           destructive: true,
           onAction: handleUnmark,
         },
-        {
-          content: t("alerts.actions.viewOnShopify", {
-            defaultValue: "View on Shopify",
-          }),
-          icon: ExternalIcon,
-          url: shopifyUrl,
-        },
       ]
     : [
         {
@@ -220,13 +202,6 @@ function AlertCardActions({
           }),
           icon: CheckCircleIcon,
           onAction: handleMarkOrdered,
-        },
-        {
-          content: t("alerts.actions.viewOnShopify", {
-            defaultValue: "View on Shopify",
-          }),
-          icon: ExternalIcon,
-          url: shopifyUrl,
         },
       ];
 
