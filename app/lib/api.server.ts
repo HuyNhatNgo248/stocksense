@@ -2,6 +2,7 @@ import type {
   AlertSettings,
   AppSettings,
   BackfillStatusResponse,
+  DefaultAppSettings,
   ForecastListResponse,
   ForecastMetrics,
   ForecastProduct,
@@ -72,6 +73,7 @@ function createApiClient({ shop, accessToken }: ApiClientOptions) {
     },
     settings: {
       get: () => get<AppSettings>("/api/settings"),
+      getDefault: () => get<DefaultAppSettings>("/api/settings/default"),
       update: (
         data: Partial<
           Pick<
@@ -128,6 +130,7 @@ function createApiClient({ shop, accessToken }: ApiClientOptions) {
 
 export type {
   AppSettings,
+  DefaultAppSettings,
   Forecast,
   ForecastListResponse,
   ForecastMetrics,

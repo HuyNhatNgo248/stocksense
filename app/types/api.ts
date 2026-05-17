@@ -77,6 +77,12 @@ export interface AlertSettings {
   alertEmail: string | null;
 }
 
+export type DefaultAppSettings = Omit<
+  AppSettings,
+  "id" | "shopId" | "updatedAt"
+> &
+  AlertSettings;
+
 export type BackfillStatus =
   | "pending"
   | "running"

@@ -12,6 +12,7 @@ import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { createApiClient } from "@/lib/api.server";
+import { isOnboardingCompleted } from "@/lib/onboarding.server";
 import type { Forecast } from "@/lib/api.server";
 import type { BackfillStatus } from "@/types/api";
 import {
@@ -24,6 +25,7 @@ import {
   type StatusFilter,
 } from "@/components/dashboard/inventory-table";
 import { ProductDetailPanel } from "@/components/dashboard/product-detail-panel";
+import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -33,13 +35,22 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     accessToken: session.accessToken ?? "",
   });
 
+  const onboarded = await isOnboardingCompleted(session.shop);
+
+  if (!onboarded) {
+    // At this point,the shop may not have been saved on the backend so do not get shop specific settings here.
+    const defaults = await api.settings.getDefault();
+    return { onboarded: false as const, defaults };
+  }
+
   const { status: backfillStatus } = await api.sync.backfillStatus();
 
   if (backfillStatus !== "done") {
-    return { ready: false as const, backfillStatus };
+    return { onboarded: true as const, ready: false as const, backfillStatus };
   }
 
   return {
+    onboarded: true as const,
     ready: true as const,
     metrics: api.forecasts.metrics(),
     inventory: api.forecasts.list({ page: 1 }),
@@ -54,6 +65,10 @@ export default function Index() {
   );
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("All");
   const revalidator = useRevalidator();
+
+  if (!data.onboarded) {
+    return <OnboardingWizard defaults={data.defaults} />;
+  }
 
   if (!data.ready) {
     return (

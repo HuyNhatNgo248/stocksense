@@ -63,6 +63,53 @@
       "retry": "Try again"
     }
   },
+  "onboarding": {
+    "shell": {
+      "stepOfTotal": "Step {{current}} of {{total}}",
+      "back": "Back"
+    },
+    "welcome": {
+      "heading": "Welcome to StockSense",
+      "subtitle": "Let's spend a minute setting up your forecasts so the numbers you see match how your store actually operates.",
+      "bullets": {
+        "forecast": {
+          "title": "We forecast demand",
+          "description": "Daily sales predictions for every variant, updated as new orders come in."
+        },
+        "alert": {
+          "title": "We flag stockout risk",
+          "description": "Critical and reorder alerts before you run out, not after."
+        },
+        "order": {
+          "title": "We tell you exactly how much to reorder",
+          "description": "Statistical order quantities based on your lead time and service level."
+        }
+      },
+      "continue": "Let's set up"
+    },
+    "preferences": {
+      "heading": "A few preferences",
+      "subtitle": "These two values drive almost every forecast. You can change them later in Settings.",
+      "leadTime": {
+        "label": "Default lead time (days)",
+        "help": "How long a typical reorder takes to arrive from your supplier. Used as the default for every SKU until you set a per-product override."
+      },
+      "serviceLevel": {
+        "label": "Target service level",
+        "help": "How often you want to avoid stockouts. Higher means more safety stock."
+      },
+      "alerts": {
+        "heading": "Email alerts",
+        "description": "Get notified when SKUs cross the critical or reorder threshold. You can change this later.",
+        "enable": "Send me email alerts",
+        "email": "Notification email",
+        "emailHelp": "Address that will receive alert notifications."
+      },
+      "save": "Save and continue",
+      "saveError": "Couldn't save your preferences. Try again in a moment.",
+      "importNote": "We're already importing your last 180 days of orders in the background — this will continue while you set up."
+    }
+  },
   "alerts": {
     "title": "Alerts",
     "inventoryAlerts": "Inventory alerts",
