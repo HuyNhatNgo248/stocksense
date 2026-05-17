@@ -83,34 +83,38 @@ export function QuickStats({ metrics, onFilterChange }: QuickStatsProps) {
     <Card padding="0">
       <InlineGrid columns={{ xs: 1, sm: 3 }} gap="0">
         <StatCell position={0} onFilter={() => onFilterChange?.("Critical")}>
-          <StatContent
-            title={t("dashboard.quickStats.critical")}
-            value={String(metrics.critical)}
-            delta={metrics.delta.criticalSinceYesterday}
-            deltaLabel={t("dashboard.quickStats.sinceYesterday")}
-            invertDelta
-          />
+          <Tooltip content={t("dashboard.quickStats.criticalDesc")}>
+            <StatContent
+              title={t("dashboard.quickStats.critical")}
+              value={String(metrics.critical)}
+              delta={metrics.delta.criticalSinceYesterday}
+              deltaLabel={t("dashboard.quickStats.sinceYesterday")}
+              invertDelta
+            />
+          </Tooltip>
         </StatCell>
         <StatCell position={1} onFilter={() => onFilterChange?.("Reorder")}>
-          <StatContent
-            title={t("dashboard.quickStats.reorderSoon")}
-            value={String(metrics.reorder)}
-            delta={metrics.delta.reorderSinceLastWeek}
-            deltaLabel={t("dashboard.quickStats.thisWeek")}
-            invertDelta
-          />
+          <Tooltip content={t("dashboard.quickStats.reorderDesc")}>
+            <StatContent
+              title={t("dashboard.quickStats.reorderSoon")}
+              value={String(metrics.reorder)}
+              delta={metrics.delta.reorderSinceLastWeek}
+              deltaLabel={t("dashboard.quickStats.thisWeek")}
+              invertDelta
+            />
+          </Tooltip>
         </StatCell>
 
         <StatCell position={3}>
-          {dataInsufficient ? (
-            <Tooltip
-              content={t("dashboard.quickStats.forecastAccuracyInsufficient")}
-            >
-              {forecastAccuracyStat}
-            </Tooltip>
-          ) : (
-            forecastAccuracyStat
-          )}
+          <Tooltip
+            content={
+              dataInsufficient
+                ? t("dashboard.quickStats.forecastAccuracyInsufficient")
+                : t("dashboard.quickStats.forecastAccuracyDesc")
+            }
+          >
+            {forecastAccuracyStat}
+          </Tooltip>
         </StatCell>
       </InlineGrid>
     </Card>
