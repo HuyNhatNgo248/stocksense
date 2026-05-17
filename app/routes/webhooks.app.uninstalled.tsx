@@ -13,6 +13,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     await Promise.all([
       db.session.deleteMany({ where: { shop } }),
       db.shopOnboarding.deleteMany({ where: { shop } }),
+      db.shopPreference.deleteMany({ where: { shop } }),
     ]);
   }
 
