@@ -109,6 +109,20 @@
       "save": "Save and continue",
       "saveError": "Couldn't save your preferences. Try again in a moment.",
       "importNote": "We're already importing your last 180 days of orders in the background — this will continue while you set up."
+    },
+    "syncing": {
+      "headingRunning": "Setting up your store",
+      "subtitleRunning": "We're importing your products, the last 180 days of orders, and computing your first forecasts. This usually takes a minute or two.",
+      "headingDone": "You're all set",
+      "subtitleDone": "Setup complete. Your forecasts are ready and we'll keep them up to date as new orders come in.",
+      "headingFailed": "Sync didn't finish",
+      "subtitleFailed": "Something went wrong while importing your sales history. You can retry now or continue and we'll try again automatically.",
+      "stepProducts": "Importing products",
+      "stepOrders": "Importing 180 days of order history",
+      "stepForecasts": "Computing initial forecasts",
+      "continue": "Continue to dashboard",
+      "retry": "Try again",
+      "completing": "Finishing up…"
     }
   },
   "alerts": {

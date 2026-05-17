@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFetcher } from "react-router";
 import {
@@ -26,9 +26,11 @@ const Z_LEVELS = [
 export function PreferencesStep({
   defaults,
   onBack,
+  onSaved,
 }: {
   defaults: DefaultAppSettings;
   onBack: () => void;
+  onSaved: () => void;
 }) {
   const { t } = useTranslation();
   const fetcher = useFetcher<{ success: boolean; error?: string }>();
@@ -44,13 +46,19 @@ export function PreferencesStep({
   const saveError =
     fetcher.data && !fetcher.data.success ? fetcher.data.error : null;
 
+  useEffect(() => {
+    if (fetcher.state === "idle" && fetcher.data?.success) {
+      onSaved();
+    }
+  }, [fetcher.state, fetcher.data, onSaved]);
+
   const zOptions = Z_LEVELS.map((level) => ({
     label: level.label,
     value: String(level.z),
   }));
 
   return (
-    <fetcher.Form method="post" action="/app/onboarding-complete">
+    <fetcher.Form method="post" action="/app/onboarding-save-prefs">
       <BlockStack gap="500">
         <Card>
           <BlockStack gap="500">

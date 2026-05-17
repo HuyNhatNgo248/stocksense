@@ -39,8 +39,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   if (!onboarded) {
     // At this point,the shop may not have been saved on the backend so do not get shop specific settings here.
-    const defaults = await api.settings.getDefault();
-    return { onboarded: false as const, defaults };
+    const [defaults, { status: backfillStatus }] = await Promise.all([
+      api.settings.getDefault(),
+      api.sync.backfillStatus(),
+    ]);
+    return { onboarded: false as const, defaults, backfillStatus };
   }
 
   const { status: backfillStatus } = await api.sync.backfillStatus();
@@ -67,7 +70,12 @@ export default function Index() {
   const revalidator = useRevalidator();
 
   if (!data.onboarded) {
-    return <OnboardingWizard defaults={data.defaults} />;
+    return (
+      <OnboardingWizard
+        defaults={data.defaults}
+        backfillStatus={data.backfillStatus}
+      />
+    );
   }
 
   if (!data.ready) {
