@@ -8,7 +8,7 @@ import {
   Select,
   Text,
 } from "@shopify/polaris";
-import { setLanguage } from "@/i18n";
+import { useChangeLanguage } from "@/hooks/use-change-language";
 
 export const WIZARD_STEPS = [
   "welcome",
@@ -27,6 +27,7 @@ export function WizardShell({
   children: React.ReactNode;
 }) {
   const { t, i18n } = useTranslation();
+  const changeLanguage = useChangeLanguage();
   const currentIndex = WIZARD_STEPS.indexOf(step);
   const progress = ((currentIndex + 1) / WIZARD_STEPS.length) * 100;
 
@@ -42,7 +43,7 @@ export function WizardShell({
               { label: "English", value: "en" },
             ]}
             value={i18n.language}
-            onChange={setLanguage}
+            onChange={changeLanguage}
           />
         </Box>
       </InlineStack>

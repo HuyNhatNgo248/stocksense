@@ -30,7 +30,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { createApiClient } from "@/lib/api.server";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
-import { setLanguage } from "@/i18n";
+import { useChangeLanguage } from "@/hooks/use-change-language";
 
 const Z_LEVELS = [
   { z: 1.282, label: "90%" },
@@ -98,6 +98,7 @@ export default function Settings() {
   const { settings, alerts } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
+  const changeLanguage = useChangeLanguage();
 
   const [alpha, setAlpha] = useState(settings.ewmaAlpha);
   const [zIndex, setZIndex] = useState(zToIndex(settings.defaultServiceLevelZ));
@@ -222,7 +223,7 @@ export default function Settings() {
                   label={t("settings.language")}
                   options={languageOptions}
                   value={i18n.language}
-                  onChange={setLanguage}
+                  onChange={changeLanguage}
                 />
               </InlineGrid>
             </BlockStack>

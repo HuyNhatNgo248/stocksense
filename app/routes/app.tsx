@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import type {
   HeadersFunction,
   LoaderFunctionArgs,
@@ -9,6 +10,7 @@ import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import { useTranslation } from "react-i18next";
 
 import { authenticate } from "../shopify.server";
+import { getShopLanguage } from "@/lib/preferences.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -29,13 +31,33 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return redirect(`/auth/exit-iframe?${exitParams}`);
   }
 
-  // eslint-disable-next-line no-undef
-  return { apiKey: process.env.SHOPIFY_APP_CLIENT_ID || "" };
+  const lang = await getShopLanguage(session.shop);
+
+  return {
+    // eslint-disable-next-line no-undef
+    apiKey: process.env.SHOPIFY_APP_CLIENT_ID || "",
+    lang,
+  };
 };
 
 export default function App() {
-  const { apiKey } = useLoaderData<typeof loader>();
-  const { t } = useTranslation();
+  const { apiKey, lang } = useLoaderData<typeof loader>();
+  const { t, i18n } = useTranslation();
+
+  // SSR: align the singleton with this request's lang on every render
+  // (i18n is a module-level singleton, so each request must rewrite it).
+  if (typeof document === "undefined" && i18n.language !== lang) {
+    i18n.changeLanguage(lang);
+  }
+
+  // Client: sync once on mount so initial paint matches the SSR HTML.
+  // After that, useChangeLanguage owns i18n state — we don't want stale
+  // loader data clobbering an in-flight user change.
+  const hydrated = useRef(false);
+  if (typeof document !== "undefined" && !hydrated.current) {
+    if (i18n.language !== lang) i18n.changeLanguage(lang);
+    hydrated.current = true;
+  }
 
   return (
     <AppProvider embedded apiKey={apiKey}>
