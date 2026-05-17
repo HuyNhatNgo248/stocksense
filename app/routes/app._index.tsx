@@ -33,8 +33,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     accessToken: session.accessToken ?? "",
   });
 
-  console.log("😆😆😆😆😆😆", session.shop, session.accessToken);
-
   const { status: backfillStatus } = await api.sync.backfillStatus();
 
   if (backfillStatus !== "done") {
