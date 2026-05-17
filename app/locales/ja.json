@@ -38,7 +38,8 @@
       "thisMonth": "今月",
       "forecastAccuracy": "予測精度",
       "forecastAccuracyDesc": "EWMA速度予測が実際の日次販売に一致する精度",
-      "vsLastMonth": "先月比"
+      "vsLastMonth": "先月比",
+      "forecastAccuracyInsufficient": "予測精度を計算するためのデータが不足しています。販売履歴が蓄積されると、こちらに表示されます。"
     },
     "panel": {
       "stockMetrics": "在庫指標",

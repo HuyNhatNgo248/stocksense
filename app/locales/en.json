@@ -38,7 +38,8 @@
       "thisMonth": "this month",
       "forecastAccuracy": "Forecast Accuracy",
       "forecastAccuracyDesc": "How closely EWMA velocity predictions match actual daily sales",
-      "vsLastMonth": "vs last month"
+      "vsLastMonth": "vs last month",
+      "forecastAccuracyInsufficient": "There is insufficient data to calculate forecast accuracy. Once more sales history is available, this will populate."
     },
     "panel": {
       "stockMetrics": "Stock Metrics",

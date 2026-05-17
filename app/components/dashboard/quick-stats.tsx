@@ -9,6 +9,7 @@ import {
   SkeletonBodyText,
   SkeletonDisplayText,
   Text,
+  Tooltip,
 } from "@shopify/polaris";
 import {
   AlertCircleIcon,
@@ -61,6 +62,23 @@ interface QuickStatsProps {
 
 export function QuickStats({ metrics, onFilterChange }: QuickStatsProps) {
   const { t } = useTranslation();
+
+  const dataInsufficient = metrics.forecastAccuracy < 70;
+
+  const forecastAccuraryValue = dataInsufficient
+    ? "—"
+    : `${metrics.forecastAccuracy.toFixed(2)}%`;
+
+  const forecastAccuracyStat = (
+    <StatContent
+      title={t("dashboard.quickStats.forecastAccuracy")}
+      value={forecastAccuraryValue}
+      delta={metrics.delta.accuracyVsLastMonth}
+      deltaLabel={t("dashboard.quickStats.vsLastMonth")}
+      deltaSuffix="%"
+    />
+  );
+
   return (
     <Card padding="0">
       <InlineGrid columns={{ xs: 1, sm: 3 }} gap="0">
@@ -84,13 +102,15 @@ export function QuickStats({ metrics, onFilterChange }: QuickStatsProps) {
         </StatCell>
 
         <StatCell position={3}>
-          <StatContent
-            title={t("dashboard.quickStats.forecastAccuracy")}
-            value={`${metrics.forecastAccuracy.toFixed(2)}%`}
-            delta={metrics.delta.accuracyVsLastMonth}
-            deltaLabel={t("dashboard.quickStats.vsLastMonth")}
-            deltaSuffix="%"
-          />
+          {dataInsufficient ? (
+            <Tooltip
+              content={t("dashboard.quickStats.forecastAccuracyInsufficient")}
+            >
+              {forecastAccuracyStat}
+            </Tooltip>
+          ) : (
+            forecastAccuracyStat
+          )}
         </StatCell>
       </InlineGrid>
     </Card>
